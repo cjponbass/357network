@@ -1,0 +1,65 @@
+# Netlify Configuration for 357NETWORK
+# This file configures build settings, environment, and routing for Netlify deployment
+
+[build]
+  # Build command for Next.js
+  # Runs next build to create an optimized production build
+  command = "next build"
+
+  # Directory containing static files to be published
+  # Next.js outputs to .next directory
+  publish = ".next"
+
+  # Directory containing the built application
+  directory = ".next"
+
+# Environment Variables
+# These are placeholders for Phase 2 Supabase integration
+# Actual values should be set in Netlify dashboard under Site Settings > Build & Deploy > Environment
+[build.environment]
+  # Node version for build environment
+  NODE_VERSION = "18"
+
+  # Next.js specific - ensure production builds
+  NODE_ENV = "production"
+
+  # Placeholder for Supabase public URL
+  # Replace with actual value in Netlify dashboard
+  NEXT_PUBLIC_SUPABASE_URL = "your_supabase_url_here"
+
+  # Placeholder for Supabase anonymous key
+  # Replace with actual value in Netlify dashboard
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "your_anon_key_here"
+
+  # Placeholder for Supabase service role key (server-side only)
+  # Replace with actual value in Netlify dashboard
+  # NOTE: This should be set in Netlify secrets, not as plain text
+  SUPABASE_SERVICE_ROLE_KEY = "your_service_role_key_here"
+
+# Redirects and rewrites
+[[redirects]]
+  # SPA routing: redirect all requests to index.html so Next.js can handle routing
+  # This allows client-side navigation to work properly
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  # Don't apply this redirect to static assets (JS, CSS, images, etc.)
+  conditions = { Role = ["visit"], NOT = { Path = ["/.next/*", "/static/*"] } }
+
+# Cache settings
+[[headers]]
+  # Static assets in .next/static
+  for = "/_next/static/*"
+  [headers.values]
+    # Cache static assets for 1 year (they have content hashes)
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  # HTML pages - shorter cache for immediate updates
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[dev]
+  command = "npm run dev"
+  port = 3000

@@ -1,0 +1,26 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#d4af37" stroke-width="2"/>
+
+  <!-- Square (left side) -->
+  <g id="square" stroke="#d4af37" stroke-width="3" fill="none">
+    <path d="M 55 85 L 75 65 L 95 85 L 75 105 Z" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Compass (right side) -->
+  <g id="compass" stroke="#d4af37" stroke-width="3" fill="none">
+    <path d="M 105 65 L 125 85 L 105 105 L 85 85 Z" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Points -->
+    <line x1="105" y1="55" x2="105" y2="75" stroke="#d4af37" stroke-width="2"/>
+    <line x1="115" y1="75" x2="130" y2="90" stroke="#d4af37" stroke-width="2"/>
+  </g>
+
+  <!-- Center G -->
+  <text x="100" y="115" font-size="48" font-weight="bold" fill="#d4af37" text-anchor="middle" font-family="serif">G</text>
+
+  <!-- Decorative corner squares -->
+  <circle cx="50" cy="50" r="3" fill="#d4af37"/>
+  <circle cx="150" cy="50" r="3" fill="#d4af37"/>
+  <circle cx="50" cy="150" r="3" fill="#d4af37"/>
+  <circle cx="150" cy="150" r="3" fill="#d4af37"/>
+</svg>
