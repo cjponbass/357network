@@ -1,0 +1,27 @@
+name: Verify Job Platform
+
+on:
+  push:
+    branches: [job-platform-rebuild]
+  pull_request:
+    branches: [feature/live-supabase-integration]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Test
+        run: bun run test
+      - name: Production build
+        run: bun run build
