@@ -10,6 +10,26 @@ export type SubmissionState =
   | "failed"
   | "cancelled";
 
+export const ATS_PROVIDER_LABELS: Record<AtsProvider, string> = {
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  ashby: "Ashby",
+  workday: "Workday",
+  unknown: "Unknown / unsupported",
+};
+
+export const SUBMISSION_STATE_LABELS: Record<SubmissionState, string> = {
+  draft: "Draft",
+  queued: "Queued",
+  running: "Running",
+  needs_user_input: "Needs your input",
+  succeeded: "Succeeded",
+  failed: "Failed",
+  cancelled: "Cancelled",
+};
+
+export const IMPLEMENTED_PROVIDERS: AtsProvider[] = ["greenhouse"];
+
 export interface AtsFormField {
   key: string;
   label: string;
@@ -28,6 +48,24 @@ export type FillValue =
       sizeBytes: number | null;
     };
 
+export interface ResolvedField extends AtsFormField {
+  value: string | null;
+  fill: FillValue | null;
+  source: "profile" | "document" | "materials" | "saved_answer" | "unresolved";
+}
+
+export type SubmittedAnswer =
+  | { key: string; label: string; type: "text"; value: string }
+  | { key: string; label: string; type: "text"; sensitive: true; provided: true }
+  | {
+      key: string;
+      label: string;
+      type: "file";
+      fileName: string;
+      mimeType: string | null;
+      sizeBytes: number | null;
+    };
+
 export type AutomationErrorCategory =
   | "no_automation_provider"
   | "unsupported_ats"
@@ -41,3 +79,48 @@ export type AutomationErrorCategory =
   | "file_upload_failed"
   | "provider_unavailable"
   | "already_submitted";
+
+export interface ReadinessReport {
+  applicationId: string;
+  jobTitle: string;
+  company: string;
+  targetUrl: string | null;
+  detectedProvider: AtsProvider;
+  detectionReason: string;
+  adapterImplemented: boolean;
+  automationConfigured: boolean;
+  automationDriverAvailable: boolean;
+  automationExecutable: boolean;
+  automationProvider: string | null;
+  resolved: ResolvedField[];
+  unresolved: ResolvedField[];
+  blockers: string[];
+  notes: string[];
+  nextState: SubmissionState;
+  errorCategory: AutomationErrorCategory | null;
+  attemptId: string | null;
+  checkedAt: string;
+  dryRun: true;
+  disclaimer: string;
+}
+
+/** Minimal client shape until generated Supabase database types are migrated. */
+export interface SubmissionAttempt {
+  id: string;
+  application_id: string;
+  state: SubmissionState;
+  error_category: AutomationErrorCategory | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export const FIELD_REMEDIATION: Record<string, { label: string; to: string }> = {
+  first_name: { label: "Candidate Profile", to: "/profile" },
+  last_name: { label: "Candidate Profile", to: "/profile" },
+  email: { label: "Candidate Profile", to: "/profile" },
+  phone: { label: "Candidate Profile", to: "/profile" },
+  linkedin: { label: "Candidate Profile", to: "/profile" },
+  website: { label: "Candidate Profile", to: "/profile" },
+  resume: { label: "Documents", to: "/documents" },
+  cover_letter: { label: "Prep workspace", to: "/jobs" },
+};
