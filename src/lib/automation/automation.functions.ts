@@ -21,7 +21,7 @@ export const getAutomationStatus = createServerFn({ method: "GET" }).handler(
   async (): Promise<AutomationStatusResult> => {
     const { detectProviderConfig } = await import("./provider/resolve.server");
     const status = detectProviderConfig();
-    return { ...status, implementedProviders: ["greenhouse"] };
+    return { ...status, implementedProviders: ["greenhouse", "lever", "ashby"] };
   },
 );
 
