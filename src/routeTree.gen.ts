@@ -11,6 +11,7 @@ import { Route as ApplicationDetailRouteImport } from "./routes/applications_.$a
 import { Route as DocumentsRouteImport } from "./routes/documents";
 import { Route as ProfileRouteImport } from "./routes/profile";
 import { Route as SettingsRouteImport } from "./routes/settings";
+import { Route as PrepareRouteImport } from "./routes/prepare";
 
 const IndexRoute = IndexRouteImport.update({ id: "/", path: "/", getParentRoute: () => rootRouteImport } as any);
 const AuthRoute = AuthRouteImport.update({ id: "/auth", path: "/auth", getParentRoute: () => rootRouteImport } as any);
@@ -21,6 +22,7 @@ const ApplicationDetailRoute = ApplicationDetailRouteImport.update({ id: "/appli
 const DocumentsRoute = DocumentsRouteImport.update({ id: "/documents", path: "/documents", getParentRoute: () => rootRouteImport } as any);
 const ProfileRoute = ProfileRouteImport.update({ id: "/profile", path: "/profile", getParentRoute: () => rootRouteImport } as any);
 const SettingsRoute = SettingsRouteImport.update({ id: "/settings", path: "/settings", getParentRoute: () => rootRouteImport } as any);
+const PrepareRoute = PrepareRouteImport.update({ id: "/prepare", path: "/prepare", getParentRoute: () => rootRouteImport } as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -32,6 +34,7 @@ export interface FileRoutesByFullPath {
   "/documents": typeof DocumentsRoute;
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
+  "/prepare": typeof PrepareRoute;
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
@@ -45,13 +48,14 @@ export interface FileRoutesById {
   "/documents": typeof DocumentsRoute;
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
+  "/prepare": typeof PrepareRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings";
+  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings";
-  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings";
+  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
+  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
   fileRoutesById: FileRoutesById;
 }
 
@@ -66,10 +70,11 @@ declare module "@tanstack/react-router" {
     "/documents": { id: "/documents"; path: "/documents"; fullPath: "/documents"; preLoaderRoute: typeof DocumentsRouteImport; parentRoute: typeof rootRouteImport };
     "/profile": { id: "/profile"; path: "/profile"; fullPath: "/profile"; preLoaderRoute: typeof ProfileRouteImport; parentRoute: typeof rootRouteImport };
     "/settings": { id: "/settings"; path: "/settings"; fullPath: "/settings"; preLoaderRoute: typeof SettingsRouteImport; parentRoute: typeof rootRouteImport };
+    "/prepare": { id: "/prepare"; path: "/prepare"; fullPath: "/prepare"; preLoaderRoute: typeof PrepareRouteImport; parentRoute: typeof rootRouteImport };
   }
 }
 
-const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute };
+const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute };
 
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
