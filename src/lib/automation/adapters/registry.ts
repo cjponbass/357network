@@ -8,11 +8,13 @@ import type { AtsAdapter } from "./contract";
 import { ashbyAdapter } from "./ashby";
 import { greenhouseAdapter } from "./greenhouse";
 import { leverAdapter } from "./lever";
+import { workdayAdapter } from "./workday";
 
 const ADAPTERS: Partial<Record<AtsProvider, AtsAdapter>> = {
   greenhouse: greenhouseAdapter,
   lever: leverAdapter,
   ashby: ashbyAdapter,
+  workday: workdayAdapter,
 };
 
 export function getAdapter(provider: AtsProvider): AtsAdapter | null {
