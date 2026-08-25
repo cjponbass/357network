@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { BRAND } from "@/lib/brand";
 
 const links = [
   ["Dashboard", "/dashboard"],
@@ -39,18 +40,16 @@ export function AppNav() {
         style={{
           maxWidth: 1180,
           margin: "0 auto",
-          padding: "12px 20px",
+          padding: "10px 20px",
           display: "flex",
           alignItems: "center",
           gap: 16,
           flexWrap: "wrap",
         }}
       >
-        <Link
-          to="/dashboard"
-          style={{ fontWeight: 800, textDecoration: "none", color: "#111827", marginRight: 8 }}
-        >
-          357Network
+        <Link to="/dashboard" style={{ textDecoration: "none", color: "#111827", marginRight: 8 }}>
+          <span style={{ display: "block", fontWeight: 800, lineHeight: 1.1 }}>{BRAND.name}</span>
+          <span style={{ display: "block", fontSize: 10, color: "#6b7280", marginTop: 2 }}>{BRAND.tagline}</span>
         </Link>
         <nav style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1 }} aria-label="Application">
           {links.map(([label, to]) => {
