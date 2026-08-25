@@ -139,24 +139,45 @@ function SettingsPage() {
       </form>
 
       <section style={panelStyle}>
-        <h2 style={{ margin: 0, fontSize: 20 }}>Deployment readiness</h2>
-        <p style={{ margin: 0, color: "#4b5563" }}>
-          This reports configuration presence only. Secret values are never returned to the browser.
-        </p>
-        {deployment ? (
-          <div style={gridStyle}>
-            <Status label="Manual workspace" ok={deployment.readyForManualUse} />
-            <Status label="AI preparation" ok={deployment.readyForAiPreparation} />
-            <Status label="Automation dry run" ok={deployment.readyForAutomationDryRun} />
-            <Status label="Verified submission" ok={deployment.readyForVerifiedSubmission} />
-            <Status label="Supabase server" ok={deployment.supabaseServer} />
-            <Status label="Supabase browser" ok={deployment.supabaseClient} />
-            <Status label="AI provider" ok={deployment.aiConfigured} />
-            <Status
-              label={`Browser provider${deployment.browserProvider ? ` (${deployment.browserProvider})` : ""}`}
-              ok={deployment.browserProviderExecutable}
-            />
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 20 }}>Deployment readiness</h2>
+            <p style={{ margin: "6px 0 0", color: "#4b5563" }}>
+              Checks configuration plus live Supabase database/storage reachability. Secret values are never returned to the browser.
+            </p>
           </div>
+          <button type="button" style={secondaryButton} onClick={() => void load()}>
+            Recheck readiness
+          </button>
+        </div>
+        {deployment ? (
+          <>
+            <div style={gridStyle}>
+              <Status label="Manual workspace" ok={deployment.readyForManualUse} />
+              <Status label="AI preparation" ok={deployment.readyForAiPreparation} />
+              <Status label="Automation dry run" ok={deployment.readyForAutomationDryRun} />
+              <Status label="Verified submission" ok={deployment.readyForVerifiedSubmission} />
+              <Status label="Supabase server config" ok={deployment.supabaseServer} />
+              <Status label="Supabase database reachable" ok={deployment.supabaseServerReachable} />
+              <Status label="Private document storage" ok={deployment.candidateDocumentsBucketReady} />
+              <Status label="Supabase browser config" ok={deployment.supabaseClient} />
+              <Status label="AI provider" ok={deployment.aiConfigured} />
+              <Status
+                label={`Browser provider${deployment.browserProvider ? ` (${deployment.browserProvider})` : ""}`}
+                ok={deployment.browserProviderExecutable}
+              />
+            </div>
+            {deployment.readinessNotes.length ? (
+              <div style={{ border: "1px solid #fde68a", background: "#fffbeb", borderRadius: 10, padding: 14 }}>
+                <strong>Readiness notes</strong>
+                <ul style={{ marginBottom: 0 }}>
+                  {deployment.readinessNotes.map((note) => <li key={note}>{note}</li>)}
+                </ul>
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "#047857" }}>No configuration warnings detected.</p>
+            )}
+          </>
         ) : (
           <p style={{ margin: 0, color: "#92400e" }}>Deployment diagnostics are not available yet.</p>
         )}
@@ -228,3 +249,4 @@ const legendStyle: React.CSSProperties = { fontWeight: 700, padding: "0 6px" };
 const checkRow: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: 18 };
 const checkLabel: React.CSSProperties = { display: "flex", alignItems: "center", gap: 7 };
 const primaryButton: React.CSSProperties = { border: 0, borderRadius: 8, padding: "11px 14px", background: "#111827", color: "white", cursor: "pointer", width: "fit-content" };
+const secondaryButton: React.CSSProperties = { border: "1px solid #d1d5db", borderRadius: 8, padding: "9px 12px", background: "white", color: "#111827", cursor: "pointer", width: "fit-content" };
