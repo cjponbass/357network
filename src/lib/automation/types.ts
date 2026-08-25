@@ -28,7 +28,7 @@ export const SUBMISSION_STATE_LABELS: Record<SubmissionState, string> = {
   cancelled: "Cancelled",
 };
 
-export const IMPLEMENTED_PROVIDERS: AtsProvider[] = ["greenhouse", "lever"];
+export const IMPLEMENTED_PROVIDERS: AtsProvider[] = ["greenhouse", "lever", "ashby", "workday"];
 
 export interface AtsFormField {
   key: string;
