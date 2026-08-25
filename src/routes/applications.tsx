@@ -30,16 +30,8 @@ function ApplicationsPage() {
     if (!user) return;
     setError(null);
     const [applicationsResult, jobsResult] = await Promise.all([
-      supabase
-        .from("applications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false }),
-      supabase
-        .from("jobs")
-        .select("*")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false }),
+      supabase.from("applications").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }),
+      supabase.from("jobs").select("*").eq("created_by", user.id).order("created_at", { ascending: false }),
     ]);
 
     if (jobsResult.error) {
@@ -47,7 +39,6 @@ function ApplicationsPage() {
       setJobs([]);
       return;
     }
-
     const ownedJobs = jobsResult.data ?? [];
     setJobs(ownedJobs);
 
@@ -63,9 +54,7 @@ function ApplicationsPage() {
         const job = jobsById.get(application.job_id);
         return {
           ...application,
-          job: job
-            ? { id: job.id, title: job.title, company: job.company, ats_name: job.ats_name }
-            : null,
+          job: job ? { id: job.id, title: job.title, company: job.company, ats_name: job.ats_name } : null,
         };
       }),
     );
@@ -157,7 +146,11 @@ function ApplicationsPage() {
         {applications.length === 0 ? <p style={{ color: "#6b7280" }}>No applications tracked yet.</p> : applications.map((application) => (
           <article key={application.id} style={cardStyle}>
             <div style={{ minWidth: 0 }}>
-              <h2 style={{ margin: 0, fontSize: 19 }}>{application.job?.title ?? "Saved job"}</h2>
+              <h2 style={{ margin: 0, fontSize: 19 }}>
+                <a href={`/applications/${application.id}`} style={{ color: "#111827", textDecoration: "none" }}>
+                  {application.job?.title ?? "Saved job"}
+                </a>
+              </h2>
               <p style={{ margin: "6px 0", color: "#4b5563" }}>{application.job?.company ?? "Unknown company"}</p>
               <p style={{ margin: "6px 0", color: "#6b7280", fontSize: 14 }}>
                 ATS: {application.job?.ats_name ?? "Not detected yet"}
@@ -165,6 +158,7 @@ function ApplicationsPage() {
               {application.notes ? <p style={{ color: "#374151", whiteSpace: "pre-wrap" }}>{application.notes}</p> : null}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
+              <a href={`/applications/${application.id}`} style={detailButton}>Open</a>
               <label style={{ fontSize: 14, color: "#374151" }}>
                 Status{" "}
                 <select
@@ -191,4 +185,5 @@ const panelStyle: React.CSSProperties = { display: "grid", gap: 12, border: "1px
 const cardStyle: React.CSSProperties = { border: "1px solid #e5e7eb", borderRadius: 12, padding: 18, display: "flex", justifyContent: "space-between", gap: 18, alignItems: "center" };
 const inputStyle: React.CSSProperties = { border: "1px solid #d1d5db", borderRadius: 8, padding: "11px 12px", fontSize: 16, background: "white" };
 const primaryButton: React.CSSProperties = { border: 0, borderRadius: 8, padding: "11px 14px", background: "#111827", color: "white", cursor: "pointer" };
+const detailButton: React.CSSProperties = { border: "1px solid #d1d5db", borderRadius: 8, padding: "8px 11px", color: "#111827", textDecoration: "none" };
 const dangerButton: React.CSSProperties = { border: "1px solid #fecaca", borderRadius: 8, padding: "8px 11px", background: "#fff", color: "#b91c1c", cursor: "pointer" };
