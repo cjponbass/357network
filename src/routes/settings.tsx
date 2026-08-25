@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WORK_ARRANGEMENT_LABELS, type WorkArrangement } from "@/lib/domain-types";
+import { getDeploymentStatus, type DeploymentStatus } from "@/lib/system/status.functions";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 const ARRANGEMENTS: WorkArrangement[] = ["onsite", "hybrid", "remote"];
@@ -17,16 +18,26 @@ function SettingsPage() {
   const [currency, setCurrency] = useState("USD");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [deployment, setDeployment] = useState<DeploymentStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { if (!loading && !user) void navigate({ to: "/auth", replace: true }); }, [loading, user, navigate]);
+  useEffect(() => {
+    if (!loading && !user) void navigate({ to: "/auth", replace: true });
+  }, [loading, user, navigate]);
 
   const load = useCallback(async () => {
     if (!user) return;
-    const { data, error: loadError } = await supabase.from("user_preferences").select("*").eq("user_id", user.id).maybeSingle();
-    if (loadError) { setError(loadError.message); return; }
+    const [{ data, error: loadError }, deploymentStatus] = await Promise.all([
+      supabase.from("user_preferences").select("*").eq("user_id", user.id).maybeSingle(),
+      getDeploymentStatus().catch(() => null),
+    ]);
+    if (loadError) {
+      setError(loadError.message);
+      return;
+    }
+    setDeployment(deploymentStatus);
     if (!data) return;
     setTitles((data.desired_titles ?? []).join(", "));
     setLocations((data.desired_locations ?? []).join(", "));
@@ -36,45 +47,177 @@ function SettingsPage() {
     setEmailNotifications(data.email_notifications);
     setWeeklyDigest(data.weekly_digest);
   }, [user]);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function save(event: React.FormEvent) {
-    event.preventDefault(); if (!user) return;
-    setBusy(true); setMessage(null); setError(null);
-    const { error: saveError } = await supabase.from("user_preferences").upsert({
-      user_id: user.id,
-      desired_titles: splitList(titles), desired_locations: splitList(locations), work_arrangements: arrangements,
-      min_salary: minSalary.trim() ? Number(minSalary) : null, currency: currency.trim() ? currency.trim().toUpperCase() : null,
-      email_notifications: emailNotifications, weekly_digest: weeklyDigest,
-    }, { onConflict: "user_id" });
-    if (saveError) setError(saveError.message); else setMessage("Preferences saved.");
+    event.preventDefault();
+    if (!user) return;
+    setBusy(true);
+    setMessage(null);
+    setError(null);
+    const { error: saveError } = await supabase.from("user_preferences").upsert(
+      {
+        user_id: user.id,
+        desired_titles: splitList(titles),
+        desired_locations: splitList(locations),
+        work_arrangements: arrangements,
+        min_salary: minSalary.trim() ? Number(minSalary) : null,
+        currency: currency.trim() ? currency.trim().toUpperCase() : null,
+        email_notifications: emailNotifications,
+        weekly_digest: weeklyDigest,
+      },
+      { onConflict: "user_id" },
+    );
+    if (saveError) setError(saveError.message);
+    else setMessage("Preferences saved.");
     setBusy(false);
   }
 
   if (loading || !user) return <main style={pageStyle}>Loading settings…</main>;
-  return <main style={pageStyle}>
-    <Nav />
-    <h1 style={{ fontSize: 34, marginBottom: 8 }}>Settings</h1>
-    <p style={{ color: "#4b5563" }}>Preferences that will drive matching, search, and notifications.</p>
-    <form onSubmit={save} style={panelStyle}>
-      <div style={gridStyle}>
-        <Field label="Desired titles (comma separated)" value={titles} set={setTitles} />
-        <Field label="Desired locations (comma separated)" value={locations} set={setLocations} />
-        <Field label="Minimum salary" type="number" value={minSalary} set={setMinSalary} />
-        <Field label="Currency" value={currency} set={setCurrency} />
-      </div>
-      <fieldset style={fieldsetStyle}><legend style={legendStyle}>Work arrangements</legend><div style={checkRow}>{ARRANGEMENTS.map((value) => <label key={value} style={checkLabel}><input type="checkbox" checked={arrangements.includes(value)} onChange={(e) => setArrangements((prev) => e.target.checked ? [...new Set([...prev, value])] : prev.filter((v) => v !== value))} />{WORK_ARRANGEMENT_LABELS[value]}</label>)}</div></fieldset>
-      <fieldset style={fieldsetStyle}><legend style={legendStyle}>Notifications</legend><div style={checkRow}><label style={checkLabel}><input type="checkbox" checked={emailNotifications} onChange={(e) => setEmailNotifications(e.target.checked)} />Email notifications</label><label style={checkLabel}><input type="checkbox" checked={weeklyDigest} onChange={(e) => setWeeklyDigest(e.target.checked)} />Weekly digest</label></div></fieldset>
-      <button disabled={busy} style={primaryButton}>{busy ? "Saving…" : "Save preferences"}</button>
-    </form>
-    <section style={panelStyle}><h2 style={{ margin: 0, fontSize: 20 }}>Account</h2><p style={{ margin: 0, color: "#4b5563" }}>Signed in as {user.email}</p></section>
-    {message ? <p style={{ color: "#047857" }}>{message}</p> : null}{error ? <p role="alert" style={{ color: "#b91c1c" }}>{error}</p> : null}
-  </main>;
+
+  return (
+    <main style={pageStyle}>
+      <Nav />
+      <h1 style={{ fontSize: 34, marginBottom: 8 }}>Settings</h1>
+      <p style={{ color: "#4b5563" }}>Preferences that will drive matching, search, and notifications.</p>
+
+      <form onSubmit={save} style={panelStyle}>
+        <div style={gridStyle}>
+          <Field label="Desired titles (comma separated)" value={titles} set={setTitles} />
+          <Field label="Desired locations (comma separated)" value={locations} set={setLocations} />
+          <Field label="Minimum salary" type="number" value={minSalary} set={setMinSalary} />
+          <Field label="Currency" value={currency} set={setCurrency} />
+        </div>
+        <fieldset style={fieldsetStyle}>
+          <legend style={legendStyle}>Work arrangements</legend>
+          <div style={checkRow}>
+            {ARRANGEMENTS.map((value) => (
+              <label key={value} style={checkLabel}>
+                <input
+                  type="checkbox"
+                  checked={arrangements.includes(value)}
+                  onChange={(e) =>
+                    setArrangements((prev) =>
+                      e.target.checked
+                        ? [...new Set([...prev, value])]
+                        : prev.filter((v) => v !== value),
+                    )
+                  }
+                />
+                {WORK_ARRANGEMENT_LABELS[value]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset style={fieldsetStyle}>
+          <legend style={legendStyle}>Notifications</legend>
+          <div style={checkRow}>
+            <label style={checkLabel}>
+              <input
+                type="checkbox"
+                checked={emailNotifications}
+                onChange={(e) => setEmailNotifications(e.target.checked)}
+              />
+              Email notifications
+            </label>
+            <label style={checkLabel}>
+              <input
+                type="checkbox"
+                checked={weeklyDigest}
+                onChange={(e) => setWeeklyDigest(e.target.checked)}
+              />
+              Weekly digest
+            </label>
+          </div>
+        </fieldset>
+        <button disabled={busy} style={primaryButton}>
+          {busy ? "Saving…" : "Save preferences"}
+        </button>
+      </form>
+
+      <section style={panelStyle}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>Deployment readiness</h2>
+        <p style={{ margin: 0, color: "#4b5563" }}>
+          This reports configuration presence only. Secret values are never returned to the browser.
+        </p>
+        {deployment ? (
+          <div style={gridStyle}>
+            <Status label="Manual workspace" ok={deployment.readyForManualUse} />
+            <Status label="AI preparation" ok={deployment.readyForAiPreparation} />
+            <Status label="Automation dry run" ok={deployment.readyForAutomationDryRun} />
+            <Status label="Verified submission" ok={deployment.readyForVerifiedSubmission} />
+            <Status label="Supabase server" ok={deployment.supabaseServer} />
+            <Status label="Supabase browser" ok={deployment.supabaseClient} />
+            <Status label="AI provider" ok={deployment.aiConfigured} />
+            <Status
+              label={`Browser provider${deployment.browserProvider ? ` (${deployment.browserProvider})` : ""}`}
+              ok={deployment.browserProviderExecutable}
+            />
+          </div>
+        ) : (
+          <p style={{ margin: 0, color: "#92400e" }}>Deployment diagnostics are not available yet.</p>
+        )}
+        {deployment?.missingBrowserConfig.length ? (
+          <p style={{ margin: 0, color: "#92400e" }}>
+            Browser automation still needs: {deployment.missingBrowserConfig.join(", ")}
+          </p>
+        ) : null}
+        {deployment?.browserProviderConfigured && !deployment.submitEnabled ? (
+          <p style={{ margin: 0, color: "#4b5563" }}>
+            Final automated submit remains intentionally disabled until controlled end-to-end testing is complete.
+          </p>
+        ) : null}
+      </section>
+
+      <section style={panelStyle}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>Account</h2>
+        <p style={{ margin: 0, color: "#4b5563" }}>Signed in as {user.email}</p>
+      </section>
+      {message ? <p style={{ color: "#047857" }}>{message}</p> : null}
+      {error ? <p role="alert" style={{ color: "#b91c1c" }}>{error}</p> : null}
+    </main>
+  );
 }
 
-function splitList(value: string) { return value.split(",").map((v) => v.trim()).filter(Boolean); }
-function Field({ label, value, set, type = "text" }: { label: string; value: string; set: (value: string) => void; type?: string }) { return <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span><input type={type} value={value} onChange={(e) => set(e.target.value)} style={inputStyle} /></label>; }
-function Nav() { return <nav style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 28 }}><a href="/dashboard" style={navLink}>Dashboard</a><a href="/jobs" style={navLink}>Jobs</a><a href="/applications" style={navLink}>Applications</a><a href="/documents" style={navLink}>Documents</a><a href="/profile" style={navLink}>Profile</a></nav>; }
+function Status({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12 }}>
+      <strong>{label}</strong>
+      <div style={{ marginTop: 5, color: ok ? "#047857" : "#92400e" }}>
+        {ok ? "Ready" : "Needs configuration"}
+      </div>
+    </div>
+  );
+}
+
+function splitList(value: string) {
+  return value.split(",").map((v) => v.trim()).filter(Boolean);
+}
+
+function Field({ label, value, set, type = "text" }: { label: string; value: string; set: (value: string) => void; type?: string }) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+      <input type={type} value={value} onChange={(e) => set(e.target.value)} style={inputStyle} />
+    </label>
+  );
+}
+
+function Nav() {
+  return (
+    <nav style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 28 }}>
+      <a href="/dashboard" style={navLink}>Dashboard</a>
+      <a href="/jobs" style={navLink}>Jobs</a>
+      <a href="/applications" style={navLink}>Applications</a>
+      <a href="/documents" style={navLink}>Documents</a>
+      <a href="/profile" style={navLink}>Profile</a>
+    </nav>
+  );
+}
+
 const pageStyle: React.CSSProperties = { maxWidth: 980, margin: "0 auto", padding: "40px 24px", fontFamily: "system-ui" };
 const navLink: React.CSSProperties = { color: "#1d4ed8", textDecoration: "none" };
 const panelStyle: React.CSSProperties = { display: "grid", gap: 18, border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, margin: "28px 0" };
