@@ -13,9 +13,13 @@ function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [trackingJobId, setTrackingJobId] = useState<string | null>(null);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [editingDescription, setEditingDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +52,8 @@ function JobsPage() {
       created_by: user.id,
       title: title.trim(),
       company: company.trim(),
+      location: location.trim() || null,
+      description: description.trim() || null,
       source_url: sourceUrl,
       ats_name: detection.provider === "unknown" ? null : detection.provider,
     });
@@ -55,6 +61,8 @@ function JobsPage() {
     else {
       setTitle("");
       setCompany("");
+      setLocation("");
+      setDescription("");
       setUrl("");
       await load();
     }
@@ -103,6 +111,23 @@ function JobsPage() {
     });
   }
 
+  async function saveDescription(jobId: string) {
+    if (!user) return;
+    setError(null);
+    const { error: updateError } = await supabase
+      .from("jobs")
+      .update({ description: editingDescription.trim() || null })
+      .eq("id", jobId)
+      .eq("created_by", user.id);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    setEditingJobId(null);
+    setEditingDescription("");
+    await load();
+  }
+
   async function removeJob(id: string) {
     if (!user) return;
     const { count, error: applicationError } = await supabase
@@ -135,7 +160,7 @@ function JobsPage() {
       <a href="/dashboard" style={backLink}>← Dashboard</a>
       <h1 style={{ fontSize: 34, marginBottom: 8 }}>Saved jobs</h1>
       <p style={{ color: "#4b5563" }}>
-        Save target roles, detect the ATS from the application URL, and start or resume a tracked application.
+        Save target roles, detect the ATS from the application URL, add the job description for stronger AI tailoring, and start or resume a tracked application.
       </p>
 
       <form
@@ -165,6 +190,18 @@ function JobsPage() {
           style={inputStyle}
         />
         <input
+          placeholder="Location (optional)"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          style={inputStyle}
+        />
+        <textarea
+          placeholder="Paste the full job description (recommended for AI fit analysis and tailoring)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{ ...inputStyle, minHeight: 150, resize: "vertical" }}
+        />
+        <input
           type="url"
           placeholder="Application URL (recommended)"
           value={url}
@@ -182,6 +219,7 @@ function JobsPage() {
         ) : (
           jobs.map((job) => {
             const detection = detectAts(job.source_url);
+            const editing = editingJobId === job.id;
             return (
               <article
                 key={job.id}
@@ -189,39 +227,69 @@ function JobsPage() {
                   border: "1px solid #e5e7eb",
                   borderRadius: 12,
                   padding: 18,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  alignItems: "flex-start",
+                  display: "grid",
+                  gap: 14,
                 }}
               >
-                <div>
-                  <h2 style={{ margin: 0, fontSize: 19 }}>{job.title}</h2>
-                  <p style={{ margin: "6px 0", color: "#4b5563" }}>{job.company}</p>
-                  <p style={{ margin: "6px 0 10px", fontSize: 13, color: "#6b7280" }}>
-                    ATS: <strong>{detection.provider === "unknown" ? "Not detected" : detection.provider}</strong>
-                    {detection.provider !== "greenhouse" && detection.provider !== "unknown"
-                      ? " · detected, automation adapter not yet enabled"
-                      : detection.provider === "greenhouse"
-                        ? " · automation adapter available"
-                        : " · manual workflow available"}
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 19 }}>{job.title}</h2>
+                    <p style={{ margin: "6px 0", color: "#4b5563" }}>{job.company}{job.location ? ` · ${job.location}` : ""}</p>
+                    <p style={{ margin: "6px 0 10px", fontSize: 13, color: "#6b7280" }}>
+                      ATS: <strong>{detection.provider === "unknown" ? "Not detected" : detection.provider}</strong>
+                      {detection.provider !== "greenhouse" && detection.provider !== "unknown"
+                        ? " · detected, automation adapter not yet enabled"
+                        : detection.provider === "greenhouse"
+                          ? " · automation adapter available"
+                          : " · manual workflow available"}
+                    </p>
+                    {job.source_url ? (
+                      <a href={job.source_url} target="_blank" rel="noreferrer">Open application page</a>
+                    ) : (
+                      <span style={{ color: "#9ca3af" }}>No application URL saved</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => void trackApplication(job)}
+                      disabled={trackingJobId === job.id}
+                      style={primaryButton}
+                    >
+                      {trackingJobId === job.id ? "Opening…" : "Track / prepare"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingJobId(editing ? null : job.id);
+                        setEditingDescription(editing ? "" : (job.description ?? ""));
+                      }}
+                      style={secondaryButton}
+                    >
+                      {editing ? "Cancel edit" : job.description ? "Edit description" : "Add description"}
+                    </button>
+                    <button onClick={() => void removeJob(job.id)} style={dangerButton}>Delete</button>
+                  </div>
+                </div>
+
+                {editing ? (
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <textarea
+                      value={editingDescription}
+                      onChange={(event) => setEditingDescription(event.target.value)}
+                      style={{ ...inputStyle, minHeight: 180, resize: "vertical" }}
+                      placeholder="Paste the full job description"
+                    />
+                    <button onClick={() => void saveDescription(job.id)} style={primaryButton}>Save description</button>
+                  </div>
+                ) : job.description ? (
+                  <details>
+                    <summary style={{ cursor: "pointer", color: "#374151" }}>View saved job description</summary>
+                    <pre style={descriptionStyle}>{job.description}</pre>
+                  </details>
+                ) : (
+                  <p style={{ margin: 0, color: "#92400e", fontSize: 14 }}>
+                    No job description saved yet. AI fit analysis and tailored materials will be weaker until one is added.
                   </p>
-                  {job.source_url ? (
-                    <a href={job.source_url} target="_blank" rel="noreferrer">Open application page</a>
-                  ) : (
-                    <span style={{ color: "#9ca3af" }}>No application URL saved</span>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  <button
-                    onClick={() => void trackApplication(job)}
-                    disabled={trackingJobId === job.id}
-                    style={primaryButton}
-                  >
-                    {trackingJobId === job.id ? "Opening…" : "Track / prepare"}
-                  </button>
-                  <button onClick={() => void removeJob(job.id)} style={dangerButton}>Delete</button>
-                </div>
+                )}
               </article>
             );
           })
@@ -253,6 +321,9 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 8,
   padding: "11px 12px",
   fontSize: 16,
+  boxSizing: "border-box",
+  width: "100%",
+  fontFamily: "inherit",
 };
 const primaryButton: React.CSSProperties = {
   border: 0,
@@ -260,6 +331,15 @@ const primaryButton: React.CSSProperties = {
   padding: "11px 14px",
   background: "#111827",
   color: "white",
+  cursor: "pointer",
+};
+const secondaryButton: React.CSSProperties = {
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  padding: "8px 11px",
+  background: "#fff",
+  color: "#374151",
+  height: 38,
   cursor: "pointer",
 };
 const dangerButton: React.CSSProperties = {
@@ -270,4 +350,16 @@ const dangerButton: React.CSSProperties = {
   color: "#b91c1c",
   height: 38,
   cursor: "pointer",
+};
+const descriptionStyle: React.CSSProperties = {
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+  fontFamily: "inherit",
+  color: "#4b5563",
+  background: "#f9fafb",
+  border: "1px solid #e5e7eb",
+  borderRadius: 8,
+  padding: 12,
+  maxHeight: 320,
+  overflowY: "auto",
 };
