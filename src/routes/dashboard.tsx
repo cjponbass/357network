@@ -70,6 +70,7 @@ function DashboardPage() {
         <a href="/jobs" style={navLink}>Jobs</a>
         <a href="/prepare" style={navLink}>AI Preparation</a>
         <a href="/applications" style={navLink}>Applications</a>
+        <a href="/answers" style={navLink}>Saved Answers</a>
         <a href="/documents" style={navLink}>Documents</a>
         <a href="/profile" style={navLink}>Profile</a>
         <a href="/settings" style={navLink}>Settings</a>
@@ -89,7 +90,10 @@ function DashboardPage() {
           Use AI Preparation to analyze fit, generate fact-grounded tailored resume text and cover letters,
           and draft safe answers to employer questions before creating or submitting an application.
         </p>
-        <a href="/prepare" style={navLink}>Open AI Preparation</a>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a href="/prepare" style={navLink}>Open AI Preparation</a>
+          <a href="/answers" style={navLink}>Manage Saved Answers</a>
+        </div>
       </section>
 
       <section style={{ marginTop: 24, border: "1px solid #e5e7eb", borderRadius: 12, padding: 22 }}>
