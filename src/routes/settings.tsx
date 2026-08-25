@@ -143,7 +143,7 @@ function SettingsPage() {
           <div>
             <h2 style={{ margin: 0, fontSize: 20 }}>Deployment readiness</h2>
             <p style={{ margin: "6px 0 0", color: "#4b5563" }}>
-              Checks configuration plus live Supabase database/storage reachability. Secret values are never returned to the browser.
+              Checks configuration, the critical database schema, and live Supabase storage reachability. Secret values are never returned to the browser.
             </p>
           </div>
           <button type="button" style={secondaryButton} onClick={() => void load()}>
@@ -159,6 +159,7 @@ function SettingsPage() {
               <Status label="Verified submission" ok={deployment.readyForVerifiedSubmission} />
               <Status label="Supabase server config" ok={deployment.supabaseServer} />
               <Status label="Supabase database reachable" ok={deployment.supabaseServerReachable} />
+              <Status label="Critical database schema" ok={deployment.criticalSchemaReady} />
               <Status label="Private document storage" ok={deployment.candidateDocumentsBucketReady} />
               <Status label="Supabase browser config" ok={deployment.supabaseClient} />
               <Status label="AI provider" ok={deployment.aiConfigured} />
@@ -167,6 +168,11 @@ function SettingsPage() {
                 ok={deployment.browserProviderExecutable}
               />
             </div>
+            {deployment.missingCriticalTables.length ? (
+              <p style={{ margin: 0, color: "#92400e" }}>
+                Missing or unreachable critical tables: {deployment.missingCriticalTables.join(", ")}
+              </p>
+            ) : null}
             {deployment.readinessNotes.length ? (
               <div style={{ border: "1px solid #fde68a", background: "#fffbeb", borderRadius: 10, padding: 14 }}>
                 <strong>Readiness notes</strong>
