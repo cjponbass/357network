@@ -104,14 +104,18 @@ export interface ReadinessReport {
   disclaimer: string;
 }
 
-/** Minimal client shape until generated Supabase database types are migrated. */
 export interface SubmissionAttempt {
   id: string;
   application_id: string;
+  ats_provider: AtsProvider;
+  automation_provider: string | null;
+  dry_run: boolean;
   state: SubmissionState;
   error_category: AutomationErrorCategory | null;
   error_message: string | null;
   created_at: string;
+  completed_at: string | null;
+  receipt_id: string | null;
 }
 
 export const FIELD_REMEDIATION: Record<string, { label: string; to: string }> = {
