@@ -6,6 +6,7 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { AppNav } from "@/components/app-nav";
 import { AuthProvider } from "@/lib/auth";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -43,6 +44,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AppNav />
         <Outlet />
       </AuthProvider>
     </QueryClientProvider>
