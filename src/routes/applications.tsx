@@ -32,7 +32,7 @@ function ApplicationsPage() {
     const [applicationsResult, jobsResult] = await Promise.all([
       supabase
         .from("applications")
-        .select("*, job:jobs(id,title,company,ats_name)")
+        .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false }),
       supabase
@@ -42,11 +42,33 @@ function ApplicationsPage() {
         .order("created_at", { ascending: false }),
     ]);
 
-    if (applicationsResult.error) setError(applicationsResult.error.message);
-    else setApplications((applicationsResult.data ?? []) as ApplicationWithJob[]);
+    if (jobsResult.error) {
+      setError(jobsResult.error.message);
+      setJobs([]);
+      return;
+    }
 
-    if (jobsResult.error) setError((current) => current ?? jobsResult.error.message);
-    else setJobs(jobsResult.data ?? []);
+    const ownedJobs = jobsResult.data ?? [];
+    setJobs(ownedJobs);
+
+    if (applicationsResult.error) {
+      setError(applicationsResult.error.message);
+      setApplications([]);
+      return;
+    }
+
+    const jobsById = new Map(ownedJobs.map((job) => [job.id, job]));
+    setApplications(
+      (applicationsResult.data ?? []).map((application) => {
+        const job = jobsById.get(application.job_id);
+        return {
+          ...application,
+          job: job
+            ? { id: job.id, title: job.title, company: job.company, ats_name: job.ats_name }
+            : null,
+        };
+      }),
+    );
   }, [user]);
 
   useEffect(() => {
