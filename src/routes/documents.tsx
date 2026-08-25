@@ -70,9 +70,10 @@ function DocumentsPage() {
     setBusy(true);
     setError(null);
     const path = documentStoragePath(user.id, file.name);
+    const options = file.type ? { upsert: false, contentType: file.type } : { upsert: false };
     const { error: uploadError } = await supabase.storage
       .from(DOCUMENT_STORAGE_BUCKET)
-      .upload(path, file, { upsert: false, contentType: file.type || undefined });
+      .upload(path, file, options);
 
     if (uploadError) {
       setError(uploadError.message);
