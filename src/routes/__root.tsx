@@ -8,16 +8,17 @@ import {
 import type { ReactNode } from "react";
 import { AppNav } from "@/components/app-nav";
 import { AuthProvider } from "@/lib/auth";
+import { BRAND } from "@/lib/brand";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "357Network Job Application Platform" },
+      { title: `${BRAND.name} — ${BRAND.tagline}` },
       {
         name: "description",
-        content: "Job application workspace with tracking and verified submission receipts.",
+        content: `${BRAND.tagline} Private job-application workspace with preparation, tracking, automation, and verified submission receipts.`,
       },
     ],
   }),
