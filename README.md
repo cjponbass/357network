@@ -1,86 +1,96 @@
-# 357NETWORK
+# 357 Network
 
-Building Careers. Strengthening Brotherhood.
+**Where Opportunity Knocks for You. Automatically.**
 
-A professional employment network for Freemasons, Masonic-friendly employers, and job seekers in the United States.
+357 Network is being rebuilt as a job-application SaaS that helps authenticated users save jobs, prepare application materials, manage private candidate data, track applications, and safely automate supported ATS workflows.
 
-## Tech Stack
+The approved brand header is the user-supplied black-and-white panoramic 357 Network artwork. The application expects that exact asset at `/357-network-header.jpg`. Do not substitute generated artwork if the binary asset is absent.
 
-- **Frontend**: Next.js 14 with React
-- **Backend**: Supabase (PostgreSQL, Auth, RLS)
-- **Payments**: Stripe
-- **Deployment**: Netlify
-- **Languages**: English, Spanish
+## Current stack
 
-## Environment Variables
+- TanStack Start + React + TypeScript
+- Supabase PostgreSQL, Auth, RLS, and private Storage
+- Netlify via the official TanStack Start Netlify adapter
+- OpenAI for fact-grounded application preparation
+- Browserbase + Playwright for server-side browser automation
+- Vitest + ESLint + TypeScript + production-build verification in GitHub Actions
 
-Copy `.env.example` to `.env.local` and fill in your credentials:
+## Current product surface
+
+- Authentication and authenticated navigation
+- Dashboard
+- Saved Jobs with ATS detection and job-description storage
+- AI Preparation: fit analysis, tailored resume text, cover letters, and safe answer suggestions
+- Saved Answers
+- Applications and application-detail workflow
+- Private Documents / resume management
+- Candidate Profile
+- Settings and deployment-readiness diagnostics
+- Submission attempts, status history, and verified receipt display
+
+## ATS architecture
+
+Adapters are implemented for:
+
+- Greenhouse
+- Lever
+- Ashby
+- Workday
+
+Automation is deliberately conservative. CAPTCHA/bot checks, authentication walls, unsupported widgets, and unresolved required questions stop the workflow for user action. Sensitive answers are never guessed. A submission is not considered successful without concrete confirmation evidence.
+
+## Safety boundary
+
+Final automated submission is controlled by:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-STRIPE_SECRET_KEY=your_stripe_secret
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_WEBHOOK_SECRET=your_webhook_secret
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+AUTOMATION_ENABLE_SUBMIT=false
 ```
+
+Keep this `false` until controlled end-to-end testing is complete. Browser automation may inspect/fill supported forms in dry-run mode, but it must not send an application while the boundary is disabled.
+
+## Environment
+
+Copy `.env.example` to your local environment and provide the required values there. The main production groups are:
+
+- Supabase server credentials
+- Supabase browser credentials
+- OpenAI provider configuration
+- Browserbase API key and project ID
+- automation submit safety switch
+
+Do not commit secrets. The Settings page reports safe readiness booleans and missing configuration names without returning secret values to the browser.
+
+## Production readiness gates
+
+Before deployment/cutover, verify all of the following:
+
+1. GitHub verification is green: TypeScript, zero-warning lint, tests, and Netlify production build.
+2. Supabase server and browser configuration are present.
+3. The production database is reachable and all critical SaaS tables are queryable.
+4. The private `candidate-documents` bucket is reachable.
+5. AI preparation is configured and tested with an authenticated user.
+6. Browserbase is configured and dry-run automation works without bypassing CAPTCHA/auth controls.
+7. Controlled ATS tests produce correct blockers and do not claim success without evidence.
+8. Only after controlled validation, explicitly enable the final-submit boundary for a verified test.
+9. Confirm verified submission receipts are created only from concrete confirmation evidence.
+10. Deploy the validated build to `357Network.ws` and re-run authenticated smoke tests.
 
 ## Development
 
-Install dependencies:
 ```bash
 npm install
-```
-
-Run the development server:
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Verification
 
-## Build
-
-```bash
-npm run build
-npm start
-```
+Use the repository scripts and GitHub workflow as the release gate. A change is not considered verified until the workflow completes successfully.
 
 ## Deployment
 
-This project is configured for Netlify deployment. The `netlify.toml` file defines build and publish settings.
+The rebuild targets Netlify using the TanStack Start adapter. Production environment variables must be configured in Netlify; repository examples are documentation only and must never contain real credentials.
 
-## Phase 1 Features
+## Legacy code
 
-- Home page
-- Job search (Find Jobs)
-- Traveling Man jobs section
-- Post a Job page
-- Advertising page
-- User registration and authentication
-- Job Seeker dashboard
-- Employer dashboard
-- Admin approval workflow
-- Stripe checkout for job listings and ads
-- English/Spanish support
-
-## Phase 2 (Locked)
-
-Phase 2 features are documented but not implemented. Do not build Phase 2 features without explicit approval.
-
-## Project Structure
-
-```
-357network/
-├── app/               # Next.js app directory
-├── docs/             # Project documentation
-├── public/           # Static files
-├── package.json      # Dependencies
-├── netlify.toml      # Netlify configuration
-└── next.config.js    # Next.js configuration
-```
-
-## License
-
-357NETWORK — 2024
+The repository contains earlier 357 Network / Job Applicant Shell code and infrastructure. The active rebuild is the `job-platform-rebuild` branch. Legacy Next.js/Freemason-job-board documentation should not be treated as the current architecture or product specification.
