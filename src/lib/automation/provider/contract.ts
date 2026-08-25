@@ -73,6 +73,7 @@ export interface ProviderVerifyResult {
 }
 
 export interface ProviderEvidence {
+  [key: string]: unknown;
   screenshotPath: string | null;
   pageUrl: string | null;
   capturedAt: string;
