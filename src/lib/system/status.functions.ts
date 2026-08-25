@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export interface DeploymentStatus {
   supabaseServer: boolean;
+  supabaseServerReachable: boolean;
+  candidateDocumentsBucketReady: boolean;
   supabaseClient: boolean;
   aiConfigured: boolean;
   browserProviderConfigured: boolean;
@@ -11,6 +13,7 @@ export interface DeploymentStatus {
   browserProvider: string | null;
   submitEnabled: boolean;
   missingBrowserConfig: string[];
+  readinessNotes: string[];
   readyForManualUse: boolean;
   readyForAiPreparation: boolean;
   readyForAutomationDryRun: boolean;
@@ -32,8 +35,41 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       process.env["VITE_SUPABASE_URL"] && process.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
     );
 
+    let supabaseServerReachable = false;
+    let candidateDocumentsBucketReady = false;
+    const readinessNotes: string[] = [];
+
+    if (supabaseServer) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error: databaseError } = await supabaseAdmin
+          .from("candidate_profiles")
+          .select("user_id", { head: true, count: "exact" })
+          .limit(1);
+        supabaseServerReachable = !databaseError;
+        if (databaseError) readinessNotes.push("Supabase server credentials are present, but the database check failed.");
+
+        const { data: bucket, error: bucketError } = await supabaseAdmin.storage.getBucket("candidate-documents");
+        candidateDocumentsBucketReady = !bucketError && Boolean(bucket?.id);
+        if (!candidateDocumentsBucketReady) readinessNotes.push("Private candidate-documents storage bucket is not reachable.");
+      } catch {
+        readinessNotes.push("Supabase server connectivity check could not complete.");
+      }
+    } else {
+      readinessNotes.push("Supabase server environment variables are incomplete.");
+    }
+
+    if (!supabaseClient) readinessNotes.push("Supabase browser environment variables are incomplete.");
+    if (!ai.configured) readinessNotes.push("AI preparation is disabled until the OpenAI provider is configured.");
+    if (!browser.executable) readinessNotes.push("Browser automation cannot run until the browser provider is executable.");
+    if (!browser.submitEnabled) readinessNotes.push("Final automated submit is intentionally disabled pending controlled validation.");
+
+    const dataPlaneReady = supabaseServer && supabaseServerReachable && supabaseClient;
+
     return {
       supabaseServer,
+      supabaseServerReachable,
+      candidateDocumentsBucketReady,
       supabaseClient,
       aiConfigured: ai.configured,
       browserProviderConfigured: browser.configured,
@@ -41,10 +77,11 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       browserProvider: browser.provider,
       submitEnabled: browser.submitEnabled,
       missingBrowserConfig: browser.missingConfig,
-      readyForManualUse: supabaseServer && supabaseClient,
-      readyForAiPreparation: supabaseServer && supabaseClient && ai.configured,
-      readyForAutomationDryRun: supabaseServer && supabaseClient && browser.executable,
+      readinessNotes,
+      readyForManualUse: dataPlaneReady,
+      readyForAiPreparation: dataPlaneReady && ai.configured,
+      readyForAutomationDryRun: dataPlaneReady && candidateDocumentsBucketReady && browser.executable,
       readyForVerifiedSubmission:
-        supabaseServer && supabaseClient && browser.executable && browser.submitEnabled,
+        dataPlaneReady && candidateDocumentsBucketReady && browser.executable && browser.submitEnabled,
     };
   });
