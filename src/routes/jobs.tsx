@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Job } from "@/lib/domain-types";
@@ -20,7 +20,7 @@ function JobsPage() {
     if (!loading && !user) void navigate({ to: "/auth", replace: true });
   }, [loading, user, navigate]);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!user) return;
     const { data, error: loadError } = await supabase
       .from("jobs")
@@ -29,11 +29,11 @@ function JobsPage() {
       .order("created_at", { ascending: false });
     if (loadError) setError(loadError.message);
     else setJobs(data ?? []);
-  }
+  }, [user]);
 
   useEffect(() => {
     void load();
-  }, [user]);
+  }, [load]);
 
   async function addJob(event: React.FormEvent) {
     event.preventDefault();
