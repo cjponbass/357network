@@ -6,9 +6,11 @@
 import type { AtsProvider } from "../types";
 import type { AtsAdapter } from "./contract";
 import { greenhouseAdapter } from "./greenhouse";
+import { leverAdapter } from "./lever";
 
 const ADAPTERS: Partial<Record<AtsProvider, AtsAdapter>> = {
   greenhouse: greenhouseAdapter,
+  lever: leverAdapter,
 };
 
 export function getAdapter(provider: AtsProvider): AtsAdapter | null {
