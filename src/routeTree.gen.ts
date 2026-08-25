@@ -7,6 +7,7 @@ import { Route as AuthRouteImport } from "./routes/auth";
 import { Route as DashboardRouteImport } from "./routes/dashboard";
 import { Route as JobsRouteImport } from "./routes/jobs";
 import { Route as ApplicationsRouteImport } from "./routes/applications";
+import { Route as ApplicationDetailRouteImport } from "./routes/applications_.$applicationId";
 import { Route as DocumentsRouteImport } from "./routes/documents";
 import { Route as ProfileRouteImport } from "./routes/profile";
 import { Route as SettingsRouteImport } from "./routes/settings";
@@ -16,6 +17,7 @@ const AuthRoute = AuthRouteImport.update({ id: "/auth", path: "/auth", getParent
 const DashboardRoute = DashboardRouteImport.update({ id: "/dashboard", path: "/dashboard", getParentRoute: () => rootRouteImport } as any);
 const JobsRoute = JobsRouteImport.update({ id: "/jobs", path: "/jobs", getParentRoute: () => rootRouteImport } as any);
 const ApplicationsRoute = ApplicationsRouteImport.update({ id: "/applications", path: "/applications", getParentRoute: () => rootRouteImport } as any);
+const ApplicationDetailRoute = ApplicationDetailRouteImport.update({ id: "/applications_/$applicationId", path: "/applications/$applicationId", getParentRoute: () => rootRouteImport } as any);
 const DocumentsRoute = DocumentsRouteImport.update({ id: "/documents", path: "/documents", getParentRoute: () => rootRouteImport } as any);
 const ProfileRoute = ProfileRouteImport.update({ id: "/profile", path: "/profile", getParentRoute: () => rootRouteImport } as any);
 const SettingsRoute = SettingsRouteImport.update({ id: "/settings", path: "/settings", getParentRoute: () => rootRouteImport } as any);
@@ -26,6 +28,7 @@ export interface FileRoutesByFullPath {
   "/dashboard": typeof DashboardRoute;
   "/jobs": typeof JobsRoute;
   "/applications": typeof ApplicationsRoute;
+  "/applications/$applicationId": typeof ApplicationDetailRoute;
   "/documents": typeof DocumentsRoute;
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
@@ -38,16 +41,17 @@ export interface FileRoutesById {
   "/dashboard": typeof DashboardRoute;
   "/jobs": typeof JobsRoute;
   "/applications": typeof ApplicationsRoute;
+  "/applications_/$applicationId": typeof ApplicationDetailRoute;
   "/documents": typeof DocumentsRoute;
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/documents" | "/profile" | "/settings";
+  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/documents" | "/profile" | "/settings";
-  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/documents" | "/profile" | "/settings";
+  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings";
+  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings";
   fileRoutesById: FileRoutesById;
 }
 
@@ -58,13 +62,14 @@ declare module "@tanstack/react-router" {
     "/dashboard": { id: "/dashboard"; path: "/dashboard"; fullPath: "/dashboard"; preLoaderRoute: typeof DashboardRouteImport; parentRoute: typeof rootRouteImport };
     "/jobs": { id: "/jobs"; path: "/jobs"; fullPath: "/jobs"; preLoaderRoute: typeof JobsRouteImport; parentRoute: typeof rootRouteImport };
     "/applications": { id: "/applications"; path: "/applications"; fullPath: "/applications"; preLoaderRoute: typeof ApplicationsRouteImport; parentRoute: typeof rootRouteImport };
+    "/applications_/$applicationId": { id: "/applications_/$applicationId"; path: "/applications/$applicationId"; fullPath: "/applications/$applicationId"; preLoaderRoute: typeof ApplicationDetailRouteImport; parentRoute: typeof rootRouteImport };
     "/documents": { id: "/documents"; path: "/documents"; fullPath: "/documents"; preLoaderRoute: typeof DocumentsRouteImport; parentRoute: typeof rootRouteImport };
     "/profile": { id: "/profile"; path: "/profile"; fullPath: "/profile"; preLoaderRoute: typeof ProfileRouteImport; parentRoute: typeof rootRouteImport };
     "/settings": { id: "/settings"; path: "/settings"; fullPath: "/settings"; preLoaderRoute: typeof SettingsRouteImport; parentRoute: typeof rootRouteImport };
   }
 }
 
-const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, DocumentsRoute, ProfileRoute, SettingsRoute };
+const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute };
 
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
