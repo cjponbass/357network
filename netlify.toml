@@ -19,6 +19,8 @@
 # SUPABASE_URL
 # SUPABASE_PUBLISHABLE_KEY
 # SUPABASE_SERVICE_ROLE_KEY
+# OPENAI_API_KEY
+# OPENAI_MODEL (optional; defaults to gpt-4o-mini)
 # BROWSERBASE_API_KEY
 # BROWSERBASE_PROJECT_ID
-# AUTOMATION_ENABLE_SUBMIT (keep false until a controlled submission test is approved)
+# AUTOMATION_ENABLE_SUBMIT (keep false until a controlled submission test is approved and passed)
