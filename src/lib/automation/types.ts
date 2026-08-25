@@ -28,7 +28,7 @@ export const SUBMISSION_STATE_LABELS: Record<SubmissionState, string> = {
   cancelled: "Cancelled",
 };
 
-export const IMPLEMENTED_PROVIDERS: AtsProvider[] = ["greenhouse"];
+export const IMPLEMENTED_PROVIDERS: AtsProvider[] = ["greenhouse", "lever"];
 
 export interface AtsFormField {
   key: string;
@@ -121,10 +121,15 @@ export interface SubmissionAttempt {
 export const FIELD_REMEDIATION: Record<string, { label: string; to: string }> = {
   first_name: { label: "Candidate Profile", to: "/profile" },
   last_name: { label: "Candidate Profile", to: "/profile" },
+  full_name: { label: "Candidate Profile", to: "/profile" },
+  name: { label: "Candidate Profile", to: "/profile" },
   email: { label: "Candidate Profile", to: "/profile" },
   phone: { label: "Candidate Profile", to: "/profile" },
+  location: { label: "Candidate Profile", to: "/profile" },
   linkedin: { label: "Candidate Profile", to: "/profile" },
   website: { label: "Candidate Profile", to: "/profile" },
+  portfolio: { label: "Candidate Profile", to: "/profile" },
   resume: { label: "Documents", to: "/documents" },
-  cover_letter: { label: "Prep workspace", to: "/jobs" },
+  cover_letter: { label: "AI Preparation", to: "/prepare" },
+  additional_information: { label: "AI Preparation", to: "/prepare" },
 };
