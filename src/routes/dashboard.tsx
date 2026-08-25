@@ -68,6 +68,7 @@ function DashboardPage() {
       <nav style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "28px 0" }}>
         <a href="/dashboard" style={navLink}>Dashboard</a>
         <a href="/jobs" style={navLink}>Jobs</a>
+        <a href="/prepare" style={navLink}>AI Preparation</a>
         <a href="/applications" style={navLink}>Applications</a>
         <a href="/documents" style={navLink}>Documents</a>
         <a href="/profile" style={navLink}>Profile</a>
@@ -83,6 +84,15 @@ function DashboardPage() {
       </section>
 
       <section style={{ marginTop: 32, border: "1px solid #e5e7eb", borderRadius: 12, padding: 22 }}>
+        <h2 style={{ marginTop: 0 }}>Application preparation</h2>
+        <p style={{ color: "#4b5563", lineHeight: 1.6 }}>
+          Use AI Preparation to analyze fit, generate fact-grounded tailored resume text and cover letters,
+          and draft safe answers to employer questions before creating or submitting an application.
+        </p>
+        <a href="/prepare" style={navLink}>Open AI Preparation</a>
+      </section>
+
+      <section style={{ marginTop: 24, border: "1px solid #e5e7eb", borderRadius: 12, padding: 22 }}>
         <h2 style={{ marginTop: 0 }}>Automation status</h2>
         <p style={{ color: "#4b5563", lineHeight: 1.6 }}>
           Greenhouse automation, Browserbase provider controls, sensitive-answer gating, idempotency,
