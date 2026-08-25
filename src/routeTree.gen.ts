@@ -12,6 +12,7 @@ import { Route as DocumentsRouteImport } from "./routes/documents";
 import { Route as ProfileRouteImport } from "./routes/profile";
 import { Route as SettingsRouteImport } from "./routes/settings";
 import { Route as PrepareRouteImport } from "./routes/prepare";
+import { Route as AnswersRouteImport } from "./routes/answers";
 
 const IndexRoute = IndexRouteImport.update({ id: "/", path: "/", getParentRoute: () => rootRouteImport } as any);
 const AuthRoute = AuthRouteImport.update({ id: "/auth", path: "/auth", getParentRoute: () => rootRouteImport } as any);
@@ -23,6 +24,7 @@ const DocumentsRoute = DocumentsRouteImport.update({ id: "/documents", path: "/d
 const ProfileRoute = ProfileRouteImport.update({ id: "/profile", path: "/profile", getParentRoute: () => rootRouteImport } as any);
 const SettingsRoute = SettingsRouteImport.update({ id: "/settings", path: "/settings", getParentRoute: () => rootRouteImport } as any);
 const PrepareRoute = PrepareRouteImport.update({ id: "/prepare", path: "/prepare", getParentRoute: () => rootRouteImport } as any);
+const AnswersRoute = AnswersRouteImport.update({ id: "/answers", path: "/answers", getParentRoute: () => rootRouteImport } as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -35,6 +37,7 @@ export interface FileRoutesByFullPath {
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
   "/prepare": typeof PrepareRoute;
+  "/answers": typeof AnswersRoute;
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
@@ -49,13 +52,14 @@ export interface FileRoutesById {
   "/profile": typeof ProfileRoute;
   "/settings": typeof SettingsRoute;
   "/prepare": typeof PrepareRoute;
+  "/answers": typeof AnswersRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
+  fullPaths: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
-  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare";
+  to: "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
+  id: "__root__" | "/" | "/auth" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
   fileRoutesById: FileRoutesById;
 }
 
@@ -71,10 +75,11 @@ declare module "@tanstack/react-router" {
     "/profile": { id: "/profile"; path: "/profile"; fullPath: "/profile"; preLoaderRoute: typeof ProfileRouteImport; parentRoute: typeof rootRouteImport };
     "/settings": { id: "/settings"; path: "/settings"; fullPath: "/settings"; preLoaderRoute: typeof SettingsRouteImport; parentRoute: typeof rootRouteImport };
     "/prepare": { id: "/prepare"; path: "/prepare"; fullPath: "/prepare"; preLoaderRoute: typeof PrepareRouteImport; parentRoute: typeof rootRouteImport };
+    "/answers": { id: "/answers"; path: "/answers"; fullPath: "/answers"; preLoaderRoute: typeof AnswersRouteImport; parentRoute: typeof rootRouteImport };
   }
 }
 
-const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute };
+const rootRouteChildren = { IndexRoute, AuthRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute, AnswersRoute };
 
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
