@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { AtsDetection } from "./ats-detect";
-import type { ReadinessReport, SubmissionAttempt } from "./types";
+import type { AutomationErrorCategory, ReadinessReport, SubmissionAttempt } from "./types";
 
 export interface AutomationStatusResult {
   configured: boolean;
@@ -53,7 +53,10 @@ export const listSubmissionAttempts = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(10);
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []).map((row) => ({
+      ...row,
+      error_category: (row.error_category as AutomationErrorCategory | null) ?? null,
+    }));
   });
 
 export const startSubmission = createServerFn({ method: "POST" })
