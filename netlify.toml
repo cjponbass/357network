@@ -13,6 +13,23 @@
   command = "bun run dev"
   port = 3000
 
+# Baseline browser hardening that is safe for the current SPA/SSR architecture.
+# A strict Content-Security-Policy will be added only after the live deployment
+# inventory is known, so we do not accidentally break Supabase or server assets.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# The approved panoramic brand artwork is versioned in Git and can be cached.
+[[headers]]
+  for = "/357-network-header.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
 # Secrets are intentionally NOT stored here. Configure these in Netlify:
 # VITE_SUPABASE_URL
 # VITE_SUPABASE_PUBLISHABLE_KEY
