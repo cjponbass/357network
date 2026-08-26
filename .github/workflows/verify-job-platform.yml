@@ -4,7 +4,10 @@ on:
   push:
     branches: [job-platform-rebuild]
   pull_request:
-    branches: [feature/live-supabase-integration]
+    branches: [job-platform-rebuild]
+
+permissions:
+  contents: read
 
 jobs:
   verify:
