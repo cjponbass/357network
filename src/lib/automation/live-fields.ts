@@ -24,7 +24,7 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   /disabilit/i,
   /gender|race|ethnic|eeoc|diversity/i,
   /salary|compensation|pay expectation|desired pay/i,
-  /criminal|conviction|background check/i,
+  /criminal|convict(?:ed|ion)|background check/i,
   /age\b|date of birth/i,
 ];
 
