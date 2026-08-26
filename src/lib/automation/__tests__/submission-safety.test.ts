@@ -8,6 +8,7 @@ describe("final submission safety policy", () => {
       getSubmissionDisabledResult({
         configured: true,
         provider: "browserbase",
+        executable: true,
         submitEnabled: false,
       }),
     ).toEqual({
@@ -26,6 +27,7 @@ describe("final submission safety policy", () => {
     const result = getSubmissionDisabledResult({
       configured: false,
       provider: null,
+      executable: false,
       submitEnabled: false,
     });
 
@@ -34,11 +36,32 @@ describe("final submission safety policy", () => {
     expect(result?.message).toContain("Nothing was sent");
   });
 
-  it("allows the caller to continue only when final submit is explicitly enabled", () => {
+  it("blocks when submit is enabled but the browser provider is not executable", () => {
     expect(
       getSubmissionDisabledResult({
         configured: true,
         provider: "browserbase",
+        executable: false,
+        submitEnabled: true,
+      }),
+    ).toEqual({
+      attemptId: null,
+      state: "needs_user_input",
+      errorCategory: "provider_unavailable",
+      receiptId: null,
+      message:
+        "Final automated submission cannot start because the browser automation provider is not executable. Nothing was sent to the employer or ATS.",
+      automationConfigured: true,
+      automationProvider: "browserbase",
+    });
+  });
+
+  it("allows the caller to continue only when final submit is enabled and executable", () => {
+    expect(
+      getSubmissionDisabledResult({
+        configured: true,
+        provider: "browserbase",
+        executable: true,
         submitEnabled: true,
       }),
     ).toBeNull();
