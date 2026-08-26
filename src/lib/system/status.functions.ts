@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deriveReadinessGates } from "@/lib/system/readiness";
 
 export interface DeploymentStatus {
   supabaseServer: boolean;
@@ -89,7 +90,16 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
     if (!browser.executable) readinessNotes.push("Browser automation cannot run until the browser provider is executable.");
     if (!browser.submitEnabled) readinessNotes.push("Final automated submit is intentionally disabled pending controlled validation.");
 
-    const dataPlaneReady = supabaseServer && supabaseServerReachable && criticalSchemaReady && supabaseClient;
+    const readiness = deriveReadinessGates({
+      supabaseServer,
+      supabaseServerReachable,
+      criticalSchemaReady,
+      candidateDocumentsBucketReady,
+      supabaseClient,
+      aiConfigured: ai.configured,
+      browserProviderExecutable: browser.executable,
+      submitEnabled: browser.submitEnabled,
+    });
 
     return {
       supabaseServer,
@@ -105,11 +115,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       submitEnabled: browser.submitEnabled,
       missingBrowserConfig: browser.missingConfig,
       readinessNotes,
-      readyForManualUse: dataPlaneReady,
-      readyForAiPreparation: dataPlaneReady && ai.configured,
-      readyForAutomationDryRun: dataPlaneReady && candidateDocumentsBucketReady && browser.executable,
-      readyForVerifiedSubmission:
-        dataPlaneReady && candidateDocumentsBucketReady && browser.executable && browser.submitEnabled,
+      ...readiness,
     };
   });
 
