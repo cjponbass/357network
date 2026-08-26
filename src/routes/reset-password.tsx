@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage, useAuth } from "@/lib/auth";
+import { MIN_PASSWORD_LENGTH, validatePasswordConfirmation } from "@/lib/auth-policy";
 
 export const Route = createFileRoute("/reset-password")({ component: ResetPasswordPage });
 
@@ -18,12 +19,9 @@ function ResetPasswordPage() {
     event.preventDefault();
     setMessage(null);
 
-    if (password.length < 8) {
-      setMessage("Use at least 8 characters for your new password.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setMessage("The passwords do not match.");
+    const validationError = validatePasswordConfirmation(password, confirmPassword);
+    if (validationError) {
+      setMessage(validationError);
       return;
     }
     if (!user) {
@@ -62,7 +60,7 @@ function ResetPasswordPage() {
             <span>New password</span>
             <input
               type="password"
-              minLength={8}
+              minLength={MIN_PASSWORD_LENGTH}
               required
               autoComplete="new-password"
               value={password}
@@ -74,7 +72,7 @@ function ResetPasswordPage() {
             <span>Confirm new password</span>
             <input
               type="password"
-              minLength={8}
+              minLength={MIN_PASSWORD_LENGTH}
               required
               autoComplete="new-password"
               value={confirmPassword}
