@@ -18,10 +18,20 @@ import type { Database } from "@/integrations/supabase/types";
 type Job = Database["public"]["Tables"]["jobs"]["Row"];
 type Material = Database["public"]["Tables"]["application_materials"]["Row"];
 
-export const Route = createFileRoute("/prepare")({ component: PreparationPage });
+type PreparationSearch = {
+  jobId?: string;
+};
+
+export const Route = createFileRoute("/prepare")({
+  validateSearch: (search: Record<string, unknown>): PreparationSearch => ({
+    jobId: typeof search.jobId === "string" && search.jobId.trim() ? search.jobId : undefined,
+  }),
+  component: PreparationPage,
+});
 
 function PreparationPage() {
   const navigate = useNavigate();
+  const { jobId: requestedJobId } = Route.useSearch();
   const { user, loading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobId, setJobId] = useState("");
@@ -50,8 +60,12 @@ function PreparationPage() {
     }
     const ownedJobs = data ?? [];
     setJobs(ownedJobs);
-    setJobId((current) => current || ownedJobs[0]?.id || "");
-  }, [user]);
+    setJobId((current) => {
+      if (requestedJobId && ownedJobs.some((job) => job.id === requestedJobId)) return requestedJobId;
+      if (current && ownedJobs.some((job) => job.id === current)) return current;
+      return ownedJobs[0]?.id ?? "";
+    });
+  }, [requestedJobId, user]);
 
   const loadMaterial = useCallback(async () => {
     if (!user || !jobId) {
