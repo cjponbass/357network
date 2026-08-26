@@ -2,59 +2,83 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { detectProviderConfig, resolveBrowserProvider } from "../provider/resolve.server";
 
-const API_KEY = "BROWSERBASE_API_KEY";
-const PROJECT_ID = "BROWSERBASE_PROJECT_ID";
-const SUBMIT_FLAG = "AUTOMATION_ENABLE_SUBMIT";
+const KEYS = [
+  "BROWSERBASE_API_KEY",
+  "BROWSERBASE_PROJECT_ID",
+  "STEEL_API_KEY",
+  "PLAYWRIGHT_SERVICE_URL",
+  "AUTOMATION_ENABLE_SUBMIT",
+] as const;
 
-const restore: Record<string, string | undefined> = {
-  [API_KEY]: process.env[API_KEY],
-  [PROJECT_ID]: process.env[PROJECT_ID],
-  [SUBMIT_FLAG]: process.env[SUBMIT_FLAG],
-};
+const restore = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
+
+function clearAutomationEnv() {
+  for (const key of KEYS) delete process.env[key];
+}
 
 afterEach(() => {
-  for (const [key, value] of Object.entries(restore)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+  clearAutomationEnv();
+  for (const key of KEYS) {
+    const value = restore[key];
+    if (value !== undefined) process.env[key] = value;
   }
 });
 
 describe("browser provider configuration", () => {
   it("reports the integration installed but not executable without credentials", () => {
-    delete process.env[API_KEY];
-    delete process.env[PROJECT_ID];
+    clearAutomationEnv();
     const config = detectProviderConfig();
     expect(config.installedDrivers).toContain("browserbase");
     expect(config.configured).toBe(false);
     expect(config.executable).toBe(false);
+    expect(config.submitEnabled).toBe(false);
     expect(config.healthVerified).toBe(false);
   });
 
   it("does not become executable with an API key but missing project id", async () => {
-    process.env[API_KEY] = "test-only-key";
-    delete process.env[PROJECT_ID];
+    clearAutomationEnv();
+    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
     const config = detectProviderConfig();
     expect(config.configured).toBe(true);
     expect(config.driverAvailable).toBe(true);
-    expect(config.missingConfig).toContain(PROJECT_ID);
+    expect(config.missingConfig).toContain("BROWSERBASE_PROJECT_ID");
     expect(config.executable).toBe(false);
     await expect(resolveBrowserProvider({ userId: "test-user" })).resolves.toBeNull();
   });
 
   it("never claims connectivity has been verified from environment config alone", () => {
-    process.env[API_KEY] = "test-only-key";
-    process.env[PROJECT_ID] = "test-project";
+    clearAutomationEnv();
+    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
+    process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
     const config = detectProviderConfig();
     expect(config.executable).toBe(true);
     expect(config.healthVerified).toBe(false);
   });
 
-  it("keeps irreversible submit disabled unless explicitly enabled", () => {
-    process.env[API_KEY] = "test-only-key";
-    process.env[PROJECT_ID] = "test-project";
-    delete process.env[SUBMIT_FLAG];
+  it("does not treat credentials for an uninstalled provider as executable", () => {
+    clearAutomationEnv();
+    process.env["STEEL_API_KEY"] = "test-only-key";
+    const config = detectProviderConfig();
+    expect(config.provider).toBe("steel");
+    expect(config.configured).toBe(true);
+    expect(config.driverAvailable).toBe(false);
+    expect(config.executable).toBe(false);
+  });
+
+  it("keeps irreversible submit disabled unless the safety switch is exactly true", () => {
+    clearAutomationEnv();
+    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
+    process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
+
     expect(detectProviderConfig().submitEnabled).toBe(false);
-    process.env[SUBMIT_FLAG] = "true";
+
+    process.env["AUTOMATION_ENABLE_SUBMIT"] = "TRUE";
+    expect(detectProviderConfig().submitEnabled).toBe(false);
+
+    process.env["AUTOMATION_ENABLE_SUBMIT"] = "1";
+    expect(detectProviderConfig().submitEnabled).toBe(false);
+
+    process.env["AUTOMATION_ENABLE_SUBMIT"] = "true";
     expect(detectProviderConfig().submitEnabled).toBe(true);
   });
 });
