@@ -7,6 +7,9 @@ describe("live ATS field normalization", () => {
     const sensitiveLabels = [
       "Will you now or in the future require visa sponsorship?",
       "Are you authorized to work in the United States?",
+      "Are you authorised to work in the United Kingdom?",
+      "Are you legally eligible to work in the United States?",
+      "Do you have work authorization for this country?",
       "What are your salary expectations?",
       "Please select your veteran status",
       "Do you have a disability?",
