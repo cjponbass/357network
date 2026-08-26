@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage, useAuth } from "@/lib/auth";
+import { MIN_PASSWORD_LENGTH, validateNewPassword } from "@/lib/auth-policy";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
@@ -22,9 +23,12 @@ function AuthPage() {
     event.preventDefault();
     setMessage(null);
 
-    if (mode === "signup" && password.length < 8) {
-      setMessage("Use at least 8 characters for your password.");
-      return;
+    if (mode === "signup") {
+      const passwordError = validateNewPassword(password);
+      if (passwordError) {
+        setMessage(passwordError);
+        return;
+      }
     }
 
     setBusy(true);
@@ -80,7 +84,7 @@ function AuthPage() {
           <span>Password</span>
           <input
             type="password"
-            minLength={mode === "signup" ? 8 : 6}
+            minLength={mode === "signup" ? MIN_PASSWORD_LENGTH : 6}
             required
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
             value={password}
