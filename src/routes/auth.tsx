@@ -20,8 +20,14 @@ function AuthPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    setBusy(true);
     setMessage(null);
+
+    if (mode === "signup" && password.length < 8) {
+      setMessage("Use at least 8 characters for your password.");
+      return;
+    }
+
+    setBusy(true);
     try {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
