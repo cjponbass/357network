@@ -14,7 +14,7 @@ const KINDS: AtsFormField["kind"][] = [
 
 const SENSITIVE_PATTERNS: RegExp[] = [
   /sponsor/i,
-  /work\s*authoriz|work\s*authoris/i,
+  /work\s*authoriz|work\s*authoris|authoriz(?:ed|ation)?\s+to\s+work|authoris(?:ed|ation)?\s+to\s+work/i,
   /visa/i,
   /right to work/i,
   /citizen|nationality/i,
