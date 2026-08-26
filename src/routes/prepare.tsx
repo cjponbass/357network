@@ -23,9 +23,10 @@ type PreparationSearch = {
 };
 
 export const Route = createFileRoute("/prepare")({
-  validateSearch: (search: Record<string, unknown>): PreparationSearch => ({
-    jobId: typeof search.jobId === "string" && search.jobId.trim() ? search.jobId : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): PreparationSearch => {
+    const value = search["jobId"];
+    return typeof value === "string" && value.trim() ? { jobId: value } : {};
+  },
   component: PreparationPage,
 });
 
