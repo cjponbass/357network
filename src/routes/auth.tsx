@@ -40,25 +40,58 @@ function AuthPage() {
     }
   }
 
+  async function requestPasswordReset() {
+    if (!email.trim()) {
+      setMessage("Enter your email address first, then request a password reset.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error) throw error;
+      setMessage("If an account exists for that email, a secure password-reset link has been sent.");
+    } catch (error) {
+      setMessage(authErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main style={{ maxWidth: 460, margin: "0 auto", padding: "64px 24px", fontFamily: "system-ui" }}>
-      <a href="/" style={{ color: "#111827", textDecoration: "none", fontWeight: 700 }}>357Network</a>
+      <a href="/" style={{ color: "#111827", textDecoration: "none", fontWeight: 700 }}>357 Network</a>
       <h1 style={{ fontSize: 34, margin: "28px 0 8px" }}>{mode === "signin" ? "Sign in" : "Create account"}</h1>
       <p style={{ color: "#4b5563", lineHeight: 1.5 }}>Access your private job application workspace.</p>
       <form onSubmit={submit} style={{ display: "grid", gap: 14, marginTop: 28 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span>Email</span>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+          <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
           <span>Password</span>
-          <input type="password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+          <input
+            type="password"
+            minLength={mode === "signup" ? 8 : 6}
+            required
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
+          />
         </label>
         <button disabled={busy} type="submit" style={primaryButton}>
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
       </form>
       {message ? <p style={{ marginTop: 16, color: "#374151" }}>{message}</p> : null}
+      {mode === "signin" ? (
+        <button type="button" disabled={busy} onClick={() => void requestPasswordReset()} style={linkButton}>
+          Forgot password?
+        </button>
+      ) : null}
       <button type="button" onClick={() => setMode(mode === "signin" ? "signup" : "signin")} style={linkButton}>
         {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
       </button>
@@ -86,6 +119,7 @@ const linkButton: React.CSSProperties = {
   background: "transparent",
   padding: 0,
   marginTop: 20,
+  marginRight: 18,
   color: "#1d4ed8",
   cursor: "pointer",
 };
