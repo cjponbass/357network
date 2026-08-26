@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { AtsDetection } from "./ats-detect";
+import { getSubmissionDisabledResult } from "./submission-safety";
 import {
   IMPLEMENTED_PROVIDERS,
   type AutomationErrorCategory,
@@ -70,19 +71,9 @@ export const startSubmission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { detectProviderConfig } = await import("./provider/resolve.server");
     const config = detectProviderConfig();
+    const disabledResult = getSubmissionDisabledResult(config);
 
-    if (!config.submitEnabled) {
-      return {
-        attemptId: null,
-        state: "needs_user_input" as const,
-        errorCategory: "provider_unavailable" as const,
-        receiptId: null,
-        message:
-          "Final automated submission is disabled until controlled validation is complete. Nothing was sent to the employer or ATS.",
-        automationConfigured: config.configured,
-        automationProvider: config.provider,
-      };
-    }
+    if (disabledResult) return disabledResult;
 
     const { runSubmission } = await import("./orchestrator.server");
     return runSubmission(
