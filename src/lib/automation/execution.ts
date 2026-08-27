@@ -21,6 +21,14 @@ export function buildIdempotencyKey(input: {
   return `${input.applicationId}:${input.targetUrl ?? "no-url"}`;
 }
 
+/**
+ * A verified first submission may advance a draft tracker entry to submitted.
+ * Never regress a later manually-tracked status such as interview, offer, etc.
+ */
+export function shouldMarkApplicationSubmitted(currentStatus: string): boolean {
+  return currentStatus === "draft";
+}
+
 /** Blockers map 1:1 onto attempt error categories. */
 export function categoryForBlocker(blocker: ProviderBlocker): AutomationErrorCategory {
   return blocker.kind;
