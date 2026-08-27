@@ -29,6 +29,7 @@ describe("Supabase migration integrity", () => {
       "20260827090000_verified_receipts_only.sql",
       "20260827100000_backfill_verified_receipt_tracker.sql",
       "20260827163000_receipt_document_ownership.sql",
+      "20260827174500_attempt_receipt_application_integrity.sql",
     ];
 
     for (const file of requiredOrder) {
@@ -109,5 +110,18 @@ describe("Supabase migration integrity", () => {
     expect(receiptDocumentOwnership).toMatch(/document_owner\s*<>\s*application_owner/i);
     expect(receiptDocumentOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+application_id,\s*resume_document_id,\s*cover_letter_document_id/i);
     expect(receiptDocumentOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_receipt_document_owner()");
+  });
+
+  it("keeps every attempt receipt attached to the same application", () => {
+    const attemptReceiptIntegrity = readFileSync(
+      resolve(migrationDir, "20260827174500_attempt_receipt_application_integrity.sql"),
+      "utf8",
+    );
+
+    expect(attemptReceiptIntegrity).toContain("enforce_attempt_receipt_application");
+    expect(attemptReceiptIntegrity).toMatch(/sr\.application_id\s*<>\s*sa\.application_id/i);
+    expect(attemptReceiptIntegrity).toMatch(/receipt_application\s*<>\s*NEW\.application_id/i);
+    expect(attemptReceiptIntegrity).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+application_id,\s*receipt_id/i);
+    expect(attemptReceiptIntegrity).toContain("REVOKE ALL ON FUNCTION public.enforce_attempt_receipt_application()");
   });
 });
