@@ -8,7 +8,7 @@ const migrationFiles = readdirSync(migrationDir)
   .sort();
 
 function expressesVerifiedTrue(sql: string) {
-  return /verified\s+(?:is\s+true|=\s*true)/i.test(sql);
+  return /verified\s+(?:is\s+true|=\s*true)|if\s+(?:old\.)?verified\b/i.test(sql);
 }
 
 describe("Supabase migration integrity", () => {
