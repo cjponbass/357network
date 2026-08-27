@@ -7,6 +7,10 @@ const migrationFiles = readdirSync(migrationDir)
   .filter((file) => file.endsWith(".sql"))
   .sort();
 
+function expressesVerifiedTrue(sql: string) {
+  return /verified\s+(?:is\s+true|=\s*true)/i.test(sql);
+}
+
 describe("Supabase migration integrity", () => {
   it("uses unique, sortable timestamp prefixes", () => {
     const timestamps = migrationFiles.map((file) => file.match(/^(\d{14})_/)?.[1] ?? null);
@@ -48,9 +52,9 @@ describe("Supabase migration integrity", () => {
       "utf8",
     );
 
-    expect(verifiedOnly).toContain("verified IS TRUE");
+    expect(expressesVerifiedTrue(verifiedOnly)).toBe(true);
     expect(successGuard).toContain("state = 'succeeded'");
-    expect(successGuard).toContain("verified IS TRUE");
-    expect(deleteGuard).toContain("verified IS TRUE");
+    expect(expressesVerifiedTrue(successGuard)).toBe(true);
+    expect(expressesVerifiedTrue(deleteGuard)).toBe(true);
   });
 });
