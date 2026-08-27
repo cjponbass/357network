@@ -124,4 +124,28 @@ describe("Supabase migration integrity", () => {
     expect(attemptReceiptIntegrity).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+application_id,\s*receipt_id/i);
     expect(attemptReceiptIntegrity).toContain("REVOKE ALL ON FUNCTION public.enforce_attempt_receipt_application()");
   });
+
+  it("requires user-owned rows to reference a real Supabase Auth user", () => {
+    const authOwnership = readFileSync(
+      resolve(migrationDir, "20260827184500_auth_owner_foreign_keys.sql"),
+      "utf8",
+    );
+
+    for (const ownerColumn of [
+      "candidate_profiles_user_auth_fkey",
+      "user_preferences_user_auth_fkey",
+      "jobs_created_by_auth_fkey",
+      "documents_user_auth_fkey",
+      "saved_answers_user_auth_fkey",
+      "applications_user_auth_fkey",
+      "job_analyses_user_auth_fkey",
+      "application_materials_user_auth_fkey",
+    ]) {
+      expect(authOwnership).toContain(ownerColumn);
+    }
+
+    expect(authOwnership).toMatch(/REFERENCES\s+auth\.users\s*\(\s*id\s*\)\s+ON\s+DELETE\s+CASCADE/i);
+    expect(authOwnership).toMatch(/LEFT\s+JOIN\s+auth\.users/i);
+    expect(authOwnership).toContain("orphaned user rows");
+  });
 });
