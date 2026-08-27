@@ -13,6 +13,7 @@ import {
   canCreateReceipt,
   outcomeForBlockers,
   requiresUserInput,
+  shouldMarkApplicationSubmitted,
 } from "./execution";
 import { normalizeLiveFields } from "./live-fields";
 import type { ProviderSession } from "./provider/contract";
@@ -225,13 +226,37 @@ export async function runSubmission(
   applicationId: string,
   requestKey?: string | null,
 ): Promise<ExecutionResult> {
-  const { job, candidate } = await loadContext(supabase, userId, applicationId);
+  const { application, job, candidate } = await loadContext(supabase, userId, applicationId);
   const targetUrl = job.source_url;
   const detection = detectAts(targetUrl);
   const adapter = getAdapter(detection.provider);
   const config = detectProviderConfig();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const base = { automationConfigured: config.configured, automationProvider: config.provider };
+
+  const markVerifiedSubmissionInTracker = async () => {
+    if (!shouldMarkApplicationSubmitted(application.status)) return;
+
+    const submittedAt = new Date().toISOString();
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from("applications")
+      .update({ status: "submitted", submitted_at: submittedAt })
+      .eq("id", applicationId)
+      .eq("user_id", userId)
+      .eq("status", "draft")
+      .select("id")
+      .maybeSingle();
+
+    if (updateError || !updated) return;
+
+    await supabaseAdmin.from("application_status_events").insert({
+      application_id: applicationId,
+      from_status: "draft",
+      to_status: "submitted",
+      note: "Verified ATS submission receipt recorded.",
+      occurred_at: submittedAt,
+    });
+  };
 
   const { data: existingReceipt } = await supabaseAdmin
     .from("submission_receipts")
@@ -472,6 +497,7 @@ export async function runSubmission(
         .eq("application_id", applicationId)
         .maybeSingle();
       if (existing) {
+        await markVerifiedSubmissionInTracker();
         return finish("succeeded", null, "Submission verified; receipt already recorded.", {
           evidence,
           receiptId: existing.id,
@@ -482,6 +508,7 @@ export async function runSubmission(
       });
     }
 
+    await markVerifiedSubmissionInTracker();
     return finish("succeeded", null, "Submission verified and receipt recorded.", {
       evidence: { ...evidence, verify: verifyResult },
       receiptId: receipt.id,
