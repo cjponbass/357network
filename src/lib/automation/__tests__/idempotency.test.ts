@@ -10,7 +10,19 @@ describe("submission idempotency target normalization", () => {
     ).toBe(buildIdempotencyKey({ applicationId: "app-1", targetUrl: `${base}#form` }));
   });
 
-  it("preserves query parameters because they may identify the job", () => {
+  it("normalizes equivalent query parameter ordering", () => {
+    const first = buildIdempotencyKey({
+      applicationId: "app-1",
+      targetUrl: "https://boards.greenhouse.io/acme/jobs/123?source=site&gh_jid=123",
+    });
+    const second = buildIdempotencyKey({
+      applicationId: "app-1",
+      targetUrl: "https://boards.greenhouse.io/acme/jobs/123?gh_jid=123&source=site",
+    });
+    expect(first).toBe(second);
+  });
+
+  it("preserves query parameter values because they may identify the job", () => {
     const first = buildIdempotencyKey({
       applicationId: "app-1",
       targetUrl: "https://boards.greenhouse.io/acme/jobs/123?gh_jid=123",
