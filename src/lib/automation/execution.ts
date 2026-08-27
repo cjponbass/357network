@@ -16,7 +16,9 @@ import type {
  * query parameters that may identify the actual job posting.
  *
  * Hash fragments are browser-only state and must not create a second
- * submission identity for the same application target.
+ * submission identity for the same application target. Query parameters are
+ * sorted by key so semantically equivalent URLs with different parameter
+ * ordering also reuse the same submission identity.
  */
 export function canonicalizeSubmissionTarget(targetUrl: string | null): string {
   if (!targetUrl) return "no-url";
@@ -25,6 +27,7 @@ export function canonicalizeSubmissionTarget(targetUrl: string | null): string {
     const url = new URL(targetUrl);
     if (url.protocol !== "http:" && url.protocol !== "https:") return targetUrl.trim();
     url.hash = "";
+    url.searchParams.sort();
     return url.toString();
   } catch {
     return targetUrl.trim();
