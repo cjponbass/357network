@@ -57,4 +57,16 @@ describe("Supabase migration integrity", () => {
     expect(expressesVerifiedTrue(successGuard)).toBe(true);
     expect(expressesVerifiedTrue(deleteGuard)).toBe(true);
   });
+
+  it("keeps saved jobs private to their owning user", () => {
+    const savedJobPrivacy = readFileSync(
+      resolve(migrationDir, "20260827134700_private_saved_jobs.sql"),
+      "utf8",
+    );
+
+    expect(savedJobPrivacy).toContain('DROP POLICY IF EXISTS "jobs readable by authenticated"');
+    expect(savedJobPrivacy).toContain('CREATE POLICY "jobs select own"');
+    expect(savedJobPrivacy).toMatch(/FOR\s+SELECT[\s\S]*TO\s+authenticated[\s\S]*auth\.uid\(\)\s*=\s*created_by/i);
+    expect(savedJobPrivacy).not.toMatch(/USING\s*\(\s*true\s*\)/i);
+  });
 });
