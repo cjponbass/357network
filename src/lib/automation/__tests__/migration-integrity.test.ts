@@ -69,4 +69,16 @@ describe("Supabase migration integrity", () => {
     expect(savedJobPrivacy).toMatch(/FOR\s+SELECT[\s\S]*TO\s+authenticated[\s\S]*auth\.uid\(\)\s*=\s*created_by/i);
     expect(savedJobPrivacy).not.toMatch(/USING\s*\(\s*true\s*\)/i);
   });
+
+  it("prevents applications from referencing another user's saved job", () => {
+    const applicationJobOwnership = readFileSync(
+      resolve(migrationDir, "20260827145000_application_job_ownership.sql"),
+      "utf8",
+    );
+
+    expect(applicationJobOwnership).toContain("enforce_application_job_owner");
+    expect(applicationJobOwnership).toMatch(/j\.created_by\s*<>\s*a\.user_id/i);
+    expect(applicationJobOwnership).toMatch(/job_owner\s*<>\s*NEW\.user_id/i);
+    expect(applicationJobOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+job_id,\s*user_id/i);
+  });
 });
