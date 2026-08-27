@@ -81,4 +81,20 @@ describe("Supabase migration integrity", () => {
     expect(applicationJobOwnership).toMatch(/job_owner\s*<>\s*NEW\.user_id/i);
     expect(applicationJobOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+job_id,\s*user_id/i);
   });
+
+  it("keeps AI analyses and generated materials attached to owned jobs and applications", () => {
+    const aiRelationOwnership = readFileSync(
+      resolve(migrationDir, "20260827154000_ai_relation_ownership.sql"),
+      "utf8",
+    );
+
+    expect(aiRelationOwnership).toContain("enforce_job_analysis_owner");
+    expect(aiRelationOwnership).toContain("enforce_application_material_owner");
+    expect(aiRelationOwnership).toMatch(/job_owner\s*<>\s*NEW\.user_id/i);
+    expect(aiRelationOwnership).toMatch(/application_owner\s*<>\s*NEW\.user_id/i);
+    expect(aiRelationOwnership).toMatch(/a\.job_id\s*=\s*NEW\.job_id/i);
+    expect(aiRelationOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+job_id,\s*application_id,\s*user_id/i);
+    expect(aiRelationOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_job_analysis_owner()");
+    expect(aiRelationOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_application_material_owner()");
+  });
 });
