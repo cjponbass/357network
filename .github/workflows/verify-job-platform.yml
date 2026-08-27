@@ -19,7 +19,20 @@ jobs:
         with:
           bun-version: 1.4.0
       - name: Install dependencies
-        run: npm ci
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if bun install; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Dependency install failed on attempt $attempt; retrying after transient registry failure..."
+              sleep $((attempt * 5))
+            fi
+          done
+          echo "Dependency installation failed after 3 attempts."
+          exit 1
       - name: Typecheck
         run: bun run typecheck
       - name: Lint
