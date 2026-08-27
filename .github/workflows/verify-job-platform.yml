@@ -15,29 +15,18 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: 1.4.0
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
       - name: Install dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            if bun install; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "Dependency install failed on attempt $attempt; retrying after transient registry failure..."
-              sleep $((attempt * 5))
-            fi
-          done
-          echo "Dependency installation failed after 3 attempts."
-          exit 1
+        run: npm install --no-audit --no-fund
       - name: Typecheck
-        run: bun run typecheck
+        run: npm run typecheck
       - name: Lint
-        run: bun run lint
+        run: npm run lint
       - name: Test
-        run: bun run test
+        run: npm run test
       - name: Production build
-        run: bun run build
+        run: npm run build
