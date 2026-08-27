@@ -28,6 +28,7 @@ describe("Supabase migration integrity", () => {
       "20260827054500_submission_success_receipt_guard.sql",
       "20260827090000_verified_receipts_only.sql",
       "20260827100000_backfill_verified_receipt_tracker.sql",
+      "20260827163000_receipt_document_ownership.sql",
     ];
 
     for (const file of requiredOrder) {
@@ -96,5 +97,17 @@ describe("Supabase migration integrity", () => {
     expect(aiRelationOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+job_id,\s*application_id,\s*user_id/i);
     expect(aiRelationOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_job_analysis_owner()");
     expect(aiRelationOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_application_material_owner()");
+  });
+
+  it("keeps receipt documents attached to the application owner", () => {
+    const receiptDocumentOwnership = readFileSync(
+      resolve(migrationDir, "20260827163000_receipt_document_ownership.sql"),
+      "utf8",
+    );
+
+    expect(receiptDocumentOwnership).toContain("enforce_receipt_document_owner");
+    expect(receiptDocumentOwnership).toMatch(/document_owner\s*<>\s*application_owner/i);
+    expect(receiptDocumentOwnership).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+application_id,\s*resume_document_id,\s*cover_letter_document_id/i);
+    expect(receiptDocumentOwnership).toContain("REVOKE ALL ON FUNCTION public.enforce_receipt_document_owner()");
   });
 });
