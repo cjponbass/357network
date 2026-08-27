@@ -10,6 +10,7 @@ import {
   canCreateReceipt,
   outcomeForBlockers,
   requiresUserInput,
+  shouldMarkApplicationSubmitted,
   skippedFields,
 } from "../execution";
 import { normalizeLiveFields } from "../live-fields";
@@ -197,6 +198,22 @@ describe("idempotency and receipt gating", () => {
     expect(
       canCreateReceipt({ submitted: false, verified: true, confirmationText: "Thanks", confirmationUrl: "https://x" }),
     ).toBe(false);
+  });
+});
+
+describe("application status transition", () => {
+  it("advances only draft applications after verified submission", () => {
+    expect(shouldMarkApplicationSubmitted("draft")).toBe(true);
+    for (const status of [
+      "submitted",
+      "in_review",
+      "interview",
+      "offer",
+      "rejected",
+      "withdrawn",
+    ]) {
+      expect(shouldMarkApplicationSubmitted(status)).toBe(false);
+    }
   });
 });
 
