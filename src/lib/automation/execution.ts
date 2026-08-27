@@ -11,6 +11,26 @@ import type {
   SubmittedAnswer,
 } from "./types";
 
+/**
+ * Normalize a target URL for duplicate-attempt protection without removing
+ * query parameters that may identify the actual job posting.
+ *
+ * Hash fragments are browser-only state and must not create a second
+ * submission identity for the same application target.
+ */
+export function canonicalizeSubmissionTarget(targetUrl: string | null): string {
+  if (!targetUrl) return "no-url";
+
+  try {
+    const url = new URL(targetUrl);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return targetUrl.trim();
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return targetUrl.trim();
+  }
+}
+
 /** Deterministic key so a repeated request reuses the same attempt row. */
 export function buildIdempotencyKey(input: {
   applicationId: string;
@@ -18,7 +38,7 @@ export function buildIdempotencyKey(input: {
   requestKey?: string | null | undefined;
 }): string {
   if (input.requestKey && input.requestKey.trim() !== "") return input.requestKey.trim();
-  return `${input.applicationId}:${input.targetUrl ?? "no-url"}`;
+  return `${input.applicationId}:${canonicalizeSubmissionTarget(input.targetUrl)}`;
 }
 
 /**
