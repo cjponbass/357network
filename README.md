@@ -14,6 +14,7 @@ The approved brand header is the user-supplied black-and-white panoramic 357 Net
 - OpenAI for fact-grounded application preparation
 - Browserbase + Playwright for server-side browser automation
 - Vitest + ESLint + TypeScript + production-build verification in GitHub Actions
+- Node.js 22+ with pnpm 10.15.0
 
 ## Current product surface
 
@@ -76,14 +77,21 @@ Before deployment/cutover, verify all of the following:
 9. Confirm verified submission receipts are created only from concrete confirmation evidence.
 10. Deploy the validated build to `357Network.ws` and re-run authenticated smoke tests.
 
+See `DEPLOYMENT_CHECKLIST.md` for the current end-to-end production rollout procedure.
+
 ## Development
 
 ```bash
-npm install
-npm run dev
+corepack enable
+pnpm install
+pnpm run dev
 ```
 
 ## Verification
+
+```bash
+pnpm run verify
+```
 
 Use the repository scripts and GitHub workflow as the release gate. A change is not considered verified until the workflow completes successfully.
 
