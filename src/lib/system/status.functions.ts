@@ -64,7 +64,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
             checkTable("saved_answers", supabaseAdmin.from("saved_answers").select("id", { head: true }).limit(1)),
             checkTable("job_analyses", supabaseAdmin.from("job_analyses").select("id", { head: true }).limit(1)),
             checkTable("application_materials", supabaseAdmin.from("application_materials").select("id", { head: true }).limit(1)),
-            checkTable("submission_attempts", supabaseAdmin.from("submission_attempts").select("id", { head: true }).limit(1)),
+            checkTable("submission_attempts", supabaseAdmin.from("submission_attempts").select("id,idempotency_key", { head: true }).limit(1)),
             checkTable("application_status_events", supabaseAdmin.from("application_status_events").select("id", { head: true }).limit(1)),
             checkTable("submission_receipts", supabaseAdmin.from("submission_receipts").select("id", { head: true }).limit(1)),
           ]);
