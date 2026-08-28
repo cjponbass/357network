@@ -19,12 +19,12 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: npx --yes pnpm@10.15.0 install --no-frozen-lockfile
       - name: Typecheck
-        run: npm run typecheck
+        run: npx --yes pnpm@10.15.0 run typecheck
       - name: Lint
-        run: npm run lint
+        run: npx --yes pnpm@10.15.0 run lint
       - name: Test
-        run: npm run test
+        run: npx --yes pnpm@10.15.0 run test
       - name: Production build
-        run: npm run build
+        run: npx --yes pnpm@10.15.0 run build
