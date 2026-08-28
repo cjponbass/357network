@@ -23,13 +23,13 @@ export interface AutomationStatusResult {
   implementedProviders: string[];
 }
 
-export const getAutomationStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AutomationStatusResult> => {
+export const getAutomationStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<AutomationStatusResult> => {
     const { detectProviderConfig } = await import("./provider/resolve.server");
     const status = detectProviderConfig();
     return { ...status, implementedProviders: [...IMPLEMENTED_PROVIDERS] };
-  },
-);
+  });
 
 export const detectAtsForUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
