@@ -26,6 +26,10 @@ const DRIVER_REQUIRED_CONFIG: Record<string, string[] | undefined> = {
   browserbase: ["BROWSERBASE_PROJECT_ID"],
 };
 
+function hasConfiguredValue(key: string): boolean {
+  return Boolean(process.env[key]?.trim());
+}
+
 export interface ProviderConfig {
   configured: boolean;
   provider: string | null;
@@ -41,9 +45,11 @@ export function detectProviderConfig(): ProviderConfig {
   const installedDrivers = Object.keys(DRIVERS);
   const submitEnabled = process.env["AUTOMATION_ENABLE_SUBMIT"] === "true";
   for (const [envVar, name] of CREDENTIALS) {
-    if (process.env[envVar]) {
+    if (hasConfiguredValue(envVar)) {
       const driverAvailable = Boolean(DRIVERS[name]);
-      const missingConfig = (DRIVER_REQUIRED_CONFIG[name] ?? []).filter((key) => !process.env[key]);
+      const missingConfig = (DRIVER_REQUIRED_CONFIG[name] ?? []).filter(
+        (key) => !hasConfiguredValue(key),
+      );
       return {
         configured: true,
         provider: name,
