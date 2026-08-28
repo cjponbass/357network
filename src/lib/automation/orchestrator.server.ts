@@ -286,16 +286,19 @@ export async function runSubmission(
     priorAttempt &&
     (priorAttempt.state === "queued" ||
       priorAttempt.state === "running" ||
-      priorAttempt.state === "succeeded")
+      priorAttempt.state === "succeeded" ||
+      priorAttempt.error_category === "verification_failed")
   ) {
+    const verificationUncertain = priorAttempt.error_category === "verification_failed";
     return {
       ...base,
       attemptId: priorAttempt.id,
       state: priorAttempt.state,
       errorCategory: (priorAttempt.error_category as AutomationErrorCategory | null) ?? null,
       receiptId: priorAttempt.receipt_id,
-      message:
-        priorAttempt.state === "succeeded"
+      message: verificationUncertain
+        ? "A prior attempt may have reached the employer, but durable receipt verification is incomplete. Automatic retry is blocked to prevent a duplicate application."
+        : priorAttempt.state === "succeeded"
           ? "This submission already completed."
           : "A submission attempt for this application is already in progress.",
     };
@@ -529,9 +532,12 @@ export async function runSubmission(
           receiptId: existing.id,
         });
       }
-      return finish("failed", "provider_error", "Submission verified but receipt storage failed.", {
-        evidence,
-      });
+      return finish(
+        "failed",
+        "verification_failed",
+        "Submission was verified at the employer, but receipt storage failed. Automatic retry is blocked to prevent a duplicate application.",
+        { evidence: { ...evidence, verify: verifyResult } },
+      );
     }
 
     await markVerifiedSubmissionInTracker();
