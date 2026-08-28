@@ -76,8 +76,10 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
         }
 
         const { data: bucket, error: bucketError } = await supabaseAdmin.storage.getBucket("candidate-documents");
-        candidateDocumentsBucketReady = !bucketError && Boolean(bucket?.id);
-        if (!candidateDocumentsBucketReady) readinessNotes.push("Private candidate-documents storage bucket is not reachable.");
+        candidateDocumentsBucketReady = !bucketError && Boolean(bucket?.id) && bucket?.public === false;
+        if (!candidateDocumentsBucketReady) {
+          readinessNotes.push("Private candidate-documents storage bucket is missing, unreachable, or public.");
+        }
       } catch {
         readinessNotes.push("Supabase server connectivity check could not complete.");
       }
