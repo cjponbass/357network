@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { browserbaseDeps } from "../provider/browserbase.server";
+import { browserbaseDeps, readBrowserbaseConfig } from "../provider/browserbase.server";
 import { detectProviderConfig, resolveBrowserProvider } from "../provider/resolve.server";
 
 const KEYS = [
@@ -53,19 +53,21 @@ describe("browser provider configuration", () => {
     process.env["BROWSERBASE_PROJECT_ID"] = "   ";
 
     expect(detectProviderConfig().configured).toBe(false);
+    expect(() => readBrowserbaseConfig()).toThrow("BROWSERBASE_API_KEY is not configured.");
     await expect(browserbaseDeps({ userId: "test-user" })).rejects.toThrow(
       "BROWSERBASE_API_KEY is not configured.",
     );
   });
 
-  it("trims Browserbase credentials before runtime initialization", async () => {
+  it("trims Browserbase credentials before runtime initialization", () => {
     clearAutomationEnv();
     process.env["BROWSERBASE_API_KEY"] = "  test-only-key  ";
     process.env["BROWSERBASE_PROJECT_ID"] = "  test-project  ";
 
-    const deps = await browserbaseDeps({ userId: "test-user" });
-    expect(deps.apiKey).toBe("test-only-key");
-    expect(deps.projectId).toBe("test-project");
+    expect(readBrowserbaseConfig()).toEqual({
+      apiKey: "test-only-key",
+      projectId: "test-project",
+    });
   });
 
   it("never claims connectivity has been verified from environment config alone", () => {
