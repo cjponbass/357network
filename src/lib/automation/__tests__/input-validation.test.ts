@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateApplicationId, validateSubmissionInput } from "../automation.functions";
+import { validateApplicationId, validateSubmissionInput } from "../input-validation";
 
 describe("automation input validation", () => {
   it("accepts and trims valid Supabase UUID application IDs", () => {
