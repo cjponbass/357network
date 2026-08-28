@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { detectAts } from "@/lib/automation/ats-detect";
+import { IMPLEMENTED_PROVIDERS } from "@/lib/automation/types";
 import type { Job } from "@/lib/domain-types";
 
 export const Route = createFileRoute("/jobs")({ component: JobsPage });
@@ -219,6 +220,7 @@ function JobsPage() {
         ) : (
           jobs.map((job) => {
             const detection = detectAts(job.source_url);
+            const adapterAvailable = IMPLEMENTED_PROVIDERS.includes(detection.provider);
             const editing = editingJobId === job.id;
             return (
               <article
@@ -237,11 +239,11 @@ function JobsPage() {
                     <p style={{ margin: "6px 0", color: "#4b5563" }}>{job.company}{job.location ? ` · ${job.location}` : ""}</p>
                     <p style={{ margin: "6px 0 10px", fontSize: 13, color: "#6b7280" }}>
                       ATS: <strong>{detection.provider === "unknown" ? "Not detected" : detection.provider}</strong>
-                      {detection.provider !== "greenhouse" && detection.provider !== "unknown"
-                        ? " · detected, automation adapter not yet enabled"
-                        : detection.provider === "greenhouse"
-                          ? " · automation adapter available"
-                          : " · manual workflow available"}
+                      {adapterAvailable
+                        ? " · automation adapter available"
+                        : detection.provider === "unknown"
+                          ? " · manual workflow available"
+                          : " · detected, automation adapter not yet enabled"}
                     </p>
                     {job.source_url ? (
                       <a href={job.source_url} target="_blank" rel="noreferrer">Open application page</a>
