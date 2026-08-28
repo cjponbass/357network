@@ -317,10 +317,23 @@ export async function runSubmission(
   };
 
   if (currentAttemptId) {
-    await supabaseAdmin
+    const { data: updatedAttempt, error: updateError } = await supabaseAdmin
       .from("submission_attempts")
       .update({ ...insertPayload, completed_at: null, error_category: null, error_message: null })
-      .eq("id", currentAttemptId);
+      .eq("id", currentAttemptId)
+      .select("id")
+      .maybeSingle();
+    if (updateError || !updatedAttempt?.id) {
+      return {
+        ...base,
+        attemptId: currentAttemptId,
+        state: "failed",
+        errorCategory: "provider_error",
+        receiptId: null,
+        message: "The submission attempt could not be re-queued safely, so nothing was sent.",
+      };
+    }
+    currentAttemptId = updatedAttempt.id;
   } else {
     const { data: created, error: insertError } = await supabaseAdmin
       .from("submission_attempts")
@@ -340,7 +353,17 @@ export async function runSubmission(
           : "The submission attempt could not be recorded safely, so nothing was sent.",
       };
     }
-    currentAttemptId = created?.id ?? null;
+    if (!created?.id) {
+      return {
+        ...base,
+        attemptId: null,
+        state: "failed",
+        errorCategory: "provider_error",
+        receiptId: null,
+        message: "The submission attempt could not be confirmed in storage, so nothing was sent.",
+      };
+    }
+    currentAttemptId = created.id;
   }
 
   const finish = async (
