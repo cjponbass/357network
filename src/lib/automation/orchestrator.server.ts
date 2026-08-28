@@ -552,9 +552,6 @@ export async function runSubmission(
       error instanceof Error ? error.message : "The automation provider failed unexpectedly.",
     );
   } finally {
-    if (session) {
-      const provider = await resolveBrowserProvider({ userId });
-      if (provider) await provider.closeSession(session);
-    }
+    if (session) await provider.closeSession(session);
   }
 }
