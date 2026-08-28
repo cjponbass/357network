@@ -250,8 +250,8 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
 }
 
 export async function browserbaseDeps(owner: ProviderOwner): Promise<BrowserbaseDeps> {
-  const apiKey = process.env["BROWSERBASE_API_KEY"];
-  const projectId = process.env["BROWSERBASE_PROJECT_ID"];
+  const apiKey = process.env["BROWSERBASE_API_KEY"]?.trim();
+  const projectId = process.env["BROWSERBASE_PROJECT_ID"]?.trim();
   if (!apiKey) throw new Error("BROWSERBASE_API_KEY is not configured.");
   if (!projectId) throw new Error("BROWSERBASE_PROJECT_ID is not configured.");
 
