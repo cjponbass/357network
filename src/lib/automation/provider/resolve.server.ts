@@ -26,8 +26,14 @@ const DRIVER_REQUIRED_CONFIG: Record<string, string[] | undefined> = {
   browserbase: ["BROWSERBASE_PROJECT_ID"],
 };
 
+const PROVIDER_CACHE = new Map<string, Promise<BrowserAutomationProvider>>();
+
 function hasConfiguredValue(key: string): boolean {
   return Boolean(process.env[key]?.trim());
+}
+
+function providerCacheKey(provider: string, owner: ProviderOwner): string {
+  return `${provider}:${owner.userId}`;
 }
 
 export interface ProviderConfig {
@@ -81,9 +87,24 @@ export async function resolveBrowserProvider(
   if (!config.executable || !config.provider) return null;
   const factory = DRIVERS[config.provider];
   if (!factory) return null;
+
+  const cacheKey = providerCacheKey(config.provider, owner);
+  const cached = PROVIDER_CACHE.get(cacheKey);
+  if (cached) {
+    try {
+      return await cached;
+    } catch {
+      PROVIDER_CACHE.delete(cacheKey);
+      return null;
+    }
+  }
+
+  const pending = factory(owner);
+  PROVIDER_CACHE.set(cacheKey, pending);
   try {
-    return await factory(owner);
+    return await pending;
   } catch {
+    PROVIDER_CACHE.delete(cacheKey);
     return null;
   }
 }
