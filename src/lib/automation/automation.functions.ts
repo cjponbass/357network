@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { AtsDetection } from "./ats-detect";
-import { validateApplicationId, validateSubmissionInput } from "./input-validation";
+import { validateApplicationId, validateAtsUrlInput, validateSubmissionInput } from "./input-validation";
 import { getSubmissionDisabledResult } from "./submission-safety";
 import {
   IMPLEMENTED_PROVIDERS,
@@ -34,7 +34,7 @@ export const getAutomationStatus = createServerFn({ method: "GET" })
 
 export const detectAtsForUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { url: string | null }) => input)
+  .inputValidator(validateAtsUrlInput)
   .handler(async ({ data }): Promise<AtsDetection> => {
     const { detectAts } = await import("./ats-detect");
     return detectAts(data.url);
