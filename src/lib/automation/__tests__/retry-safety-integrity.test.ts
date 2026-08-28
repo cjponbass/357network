@@ -20,4 +20,15 @@ describe("submission retry safety", () => {
       /receiptError \|\| !receipt[\s\S]*return finish\([\s\S]*"failed",[\s\S]*"verification_failed",[\s\S]*receipt storage failed/i,
     );
   });
+
+  it("closes the browser session with the same provider instance that opened it", () => {
+    expect(orchestrator).toContain("const provider = await resolveBrowserProvider({ userId });");
+    expect(orchestrator).toContain("session = await provider.openSession(targetUrl);");
+    expect(orchestrator).toMatch(
+      /finally\s*{\s*if \(session\) await provider\.closeSession\(session\);\s*}/,
+    );
+    expect(orchestrator).not.toMatch(
+      /finally\s*{[\s\S]*resolveBrowserProvider\([\s\S]*closeSession/,
+    );
+  });
 });
