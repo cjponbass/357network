@@ -1,8 +1,9 @@
 # 357Network job-platform deployment.
 # TanStack Start SSR/server functions are handled by Netlify's official Vite adapter.
+# Keep the hosting runtime aligned with the Node 22 + pnpm toolchain verified in CI.
 
 [build]
-  command = "bun run build"
+  command = "pnpm run build"
   publish = "dist/client"
 
 [build.environment]
@@ -10,7 +11,7 @@
   NODE_ENV = "production"
 
 [dev]
-  command = "bun run dev"
+  command = "pnpm run dev"
   port = 3000
 
 # Baseline browser hardening that is safe for the current SPA/SSR architecture.
