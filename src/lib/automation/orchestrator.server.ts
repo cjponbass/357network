@@ -328,13 +328,16 @@ export async function runSubmission(
       .select("id")
       .maybeSingle();
     if (insertError) {
+      const duplicateAttempt = insertError.code === "23505";
       return {
         ...base,
         attemptId: null,
-        state: "queued",
-        errorCategory: "already_submitted",
+        state: "failed",
+        errorCategory: duplicateAttempt ? "already_submitted" : "provider_error",
         receiptId: null,
-        message: "Another submission attempt is already active.",
+        message: duplicateAttempt
+          ? "Another submission attempt is already active."
+          : "The submission attempt could not be recorded safely, so nothing was sent.",
       };
     }
     currentAttemptId = created?.id ?? null;
@@ -520,6 +523,9 @@ export async function runSubmission(
       error instanceof Error ? error.message : "The automation provider failed unexpectedly.",
     );
   } finally {
-    if (session) await provider.closeSession(session).catch(() => undefined);
+    if (session) {
+      const provider = await resolveBrowserProvider({ userId });
+      if (provider) await provider.closeSession(session);
+    }
   }
 }
