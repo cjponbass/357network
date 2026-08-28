@@ -243,11 +243,8 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
       const current = sessions.get(session.sessionId);
       sessions.delete(session.sessionId);
       if (!current) return;
-      try {
-        await current.browser.close();
-      } finally {
-        await deps.releaseSession(current.bbSessionId).catch(() => undefined);
-      }
+      await current.browser.close().catch(() => undefined);
+      await deps.releaseSession(current.bbSessionId).catch(() => undefined);
     },
   };
 }
