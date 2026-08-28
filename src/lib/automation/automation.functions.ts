@@ -23,6 +23,25 @@ export interface AutomationStatusResult {
   implementedProviders: string[];
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function validateApplicationId(input: { applicationId: string }) {
+  const applicationId = input.applicationId.trim();
+  if (!UUID_PATTERN.test(applicationId)) {
+    throw new Error("A valid application ID is required.");
+  }
+  return { applicationId };
+}
+
+export function validateSubmissionInput(input: { applicationId: string; requestKey?: string | null }) {
+  const { applicationId } = validateApplicationId(input);
+  const requestKey = input.requestKey?.trim() || null;
+  if (requestKey && requestKey.length > 200) {
+    throw new Error("Submission request key is too long.");
+  }
+  return { applicationId, requestKey };
+}
+
 export const getAutomationStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<AutomationStatusResult> => {
@@ -41,7 +60,7 @@ export const detectAtsForUrl = createServerFn({ method: "POST" })
 
 export const checkSubmissionReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { applicationId: string }) => input)
+  .inputValidator(validateApplicationId)
   .handler(async ({ data, context }): Promise<ReadinessReport> => {
     const { runReadinessCheck } = await import("./orchestrator.server");
     return runReadinessCheck(context.supabase, context.userId, data.applicationId);
@@ -49,7 +68,7 @@ export const checkSubmissionReadiness = createServerFn({ method: "POST" })
 
 export const listSubmissionAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { applicationId: string }) => input)
+  .inputValidator(validateApplicationId)
   .handler(async ({ data, context }): Promise<SubmissionAttempt[]> => {
     const { data: rows, error } = await context.supabase
       .from("submission_attempts")
@@ -67,7 +86,7 @@ export const listSubmissionAttempts = createServerFn({ method: "POST" })
 
 export const startSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { applicationId: string; requestKey?: string | null }) => input)
+  .inputValidator(validateSubmissionInput)
   .handler(async ({ data, context }) => {
     const { detectProviderConfig } = await import("./provider/resolve.server");
     const config = detectProviderConfig();
@@ -80,6 +99,6 @@ export const startSubmission = createServerFn({ method: "POST" })
       context.supabase,
       context.userId,
       data.applicationId,
-      data.requestKey ?? null,
+      data.requestKey,
     );
   });
