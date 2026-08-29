@@ -42,6 +42,9 @@ function isLocalOrPrivateHost(hostname: string) {
     host.endsWith(".internal") ||
     host.endsWith(".lan") ||
     host.endsWith(".home.arpa") ||
+    host.endsWith(".test") ||
+    host.endsWith(".invalid") ||
+    host.endsWith(".example") ||
     (!host.includes(".") && !host.includes(":")) ||
     isPrivateIpv4(host)
   ) {
