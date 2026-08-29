@@ -39,6 +39,11 @@ describe("automation input validation", () => {
     "http://localhost./job",
     "http://jobs.localhost/job",
     "http://jobs.localhost./job",
+    "http://intranet/job",
+    "http://ats.local/job",
+    "http://ats.internal/job",
+    "http://ats.lan/job",
+    "http://router.home.arpa/job",
     "http://127.0.0.1/job",
     "http://10.0.0.5/job",
     "http://100.64.0.1/job",
@@ -79,6 +84,11 @@ describe("automation input validation", () => {
       expect(validateAtsUrlInput({ url })).toEqual({ url });
     },
   );
+
+  it("accepts a normal public hostname", () => {
+    const url = "https://jobs.example.org/apply";
+    expect(validateAtsUrlInput({ url })).toEqual({ url });
+  });
 
   it("rejects oversized ATS URLs", () => {
     expect(() => validateAtsUrlInput({ url: `https://example.com/${"x".repeat(2048)}` })).toThrow(
