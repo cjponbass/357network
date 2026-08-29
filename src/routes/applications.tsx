@@ -92,8 +92,10 @@ function ApplicationsPage() {
   async function updateStatus(id: string, status: ApplicationStatus) {
     if (!user) return;
     setError(null);
-    const submittedAt = status === "submitted" ? new Date().toISOString() : undefined;
-    const changes = submittedAt ? { status, submitted_at: submittedAt } : { status };
+    const changes = {
+      status,
+      submitted_at: status === "submitted" ? new Date().toISOString() : null,
+    };
     const { error: updateError } = await supabase
       .from("applications")
       .update(changes)
