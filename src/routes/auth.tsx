@@ -25,6 +25,12 @@ function AuthPage() {
     event.preventDefault();
     setMessage(null);
 
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setMessage("Enter a valid email address.");
+      return;
+    }
+
     if (mode === "signup") {
       const passwordError = validateNewPassword(password);
       if (passwordError) {
@@ -36,11 +42,11 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
         await navigate({ to: "/dashboard" });
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ email: normalizedEmail, password });
         if (error) throw error;
         setMessage("Account created. Check your email if confirmation is required, then sign in.");
         setMode("signin");
@@ -53,7 +59,8 @@ function AuthPage() {
   }
 
   async function requestPasswordReset() {
-    if (!email.trim()) {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
       setMessage("Enter your email address first, then request a password reset.");
       return;
     }
@@ -62,7 +69,7 @@ function AuthPage() {
     setMessage(null);
     try {
       const redirectTo = `${window.location.origin}/reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
       if (error) throw error;
       setMessage("If an account exists for that email, a secure password-reset link has been sent.");
     } catch (error) {
