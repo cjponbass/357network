@@ -32,8 +32,8 @@ const RULES: HostRule[] = [
   },
   {
     provider: "workday",
-    test: (h) => /(^|\.)myworkdayjobs\.com$/.test(h) || /(^|\.)workday\.com$/.test(h),
-    reason: "Host is a Workday careers domain.",
+    test: (h) => /(^|\.)myworkdayjobs\.com$/.test(h),
+    reason: "Host is a Workday tenant careers domain.",
   },
 ];
 
