@@ -37,4 +37,8 @@ describe("ATS URL detection", () => {
     expect(detectAts("https://example.com/jobs/lever.co/123").provider).toBe("unknown");
     expect(detectAts("https://example.com/?next=https://boards.greenhouse.io/acme").provider).toBe("unknown");
   });
+
+  it("does not treat the general Workday company domain as an application tenant", () => {
+    expect(detectAts("https://www.workday.com/en-us/company/careers.html").provider).toBe("unknown");
+  });
 });
