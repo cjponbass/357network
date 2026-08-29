@@ -34,6 +34,29 @@ describe("automation input validation", () => {
     },
   );
 
+  it.each([
+    "http://localhost:3000/job",
+    "http://jobs.localhost/job",
+    "http://127.0.0.1/job",
+    "http://10.0.0.5/job",
+    "http://169.254.169.254/latest/meta-data",
+    "http://172.16.1.10/job",
+    "http://172.31.255.254/job",
+    "http://192.168.1.20/job",
+    "http://[::1]/job",
+    "http://[fc00::1]/job",
+    "http://[fd12::1]/job",
+    "http://[fe80::1]/job",
+  ])("rejects local or private ATS target %j", (url) => {
+    expect(() => validateAtsUrlInput({ url })).toThrow(
+      "Application URL cannot target a local or private network address.",
+    );
+  });
+
+  it("does not over-block public addresses near private IPv4 ranges", () => {
+    expect(validateAtsUrlInput({ url: "https://172.32.0.1/job" })).toEqual({ url: "https://172.32.0.1/job" });
+  });
+
   it("rejects oversized ATS URLs", () => {
     expect(() => validateAtsUrlInput({ url: `https://example.com/${"x".repeat(2048)}` })).toThrow(
       "Application URL is too long.",
