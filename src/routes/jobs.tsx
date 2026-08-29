@@ -103,6 +103,27 @@ function JobsPage() {
         return;
       }
       applicationId = created.id;
+
+      const { error: eventError } = await supabase.from("application_status_events").insert({
+        application_id: applicationId,
+        from_status: null,
+        to_status: "draft",
+        note: "Application tracking created",
+      });
+      if (eventError) {
+        const { error: rollbackError } = await supabase
+          .from("applications")
+          .delete()
+          .eq("id", applicationId)
+          .eq("user_id", user.id);
+        setError(
+          rollbackError
+            ? `Application history could not be recorded (${eventError.message}), and the incomplete application could not be rolled back (${rollbackError.message}).`
+            : `Application history could not be recorded: ${eventError.message}`,
+        );
+        setTrackingJobId(null);
+        return;
+      }
     }
 
     setTrackingJobId(null);
