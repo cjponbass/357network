@@ -27,13 +27,15 @@ This checklist applies to the active `job-platform-rebuild` branch and the TanSt
 
 Configure values in Netlify environment settings. **Never paste real secret values into this file or commit them to GitHub.**
 
-Required application configuration:
+Required application configuration (matching `.env.example` and the active Supabase clients):
 
 - [ ] `VITE_SUPABASE_URL`
-- [ ] `VITE_SUPABASE_ANON_KEY`
-- [ ] server-side Supabase URL/key variables required by the current server helpers
+- [ ] `VITE_SUPABASE_PUBLISHABLE_KEY`
+- [ ] `SUPABASE_URL`
+- [ ] `SUPABASE_PUBLISHABLE_KEY`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] `OPENAI_API_KEY`
-- [ ] optional OpenAI model override, if intentionally used
+- [ ] optional `OPENAI_MODEL` override, if intentionally used
 - [ ] `BROWSERBASE_API_KEY`
 - [ ] `BROWSERBASE_PROJECT_ID`
 - [ ] `AUTOMATION_ENABLE_SUBMIT=false`
