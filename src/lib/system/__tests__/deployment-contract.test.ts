@@ -47,4 +47,13 @@ describe("production deployment contract", () => {
     expect(brand).toContain("Where Opportunity Knocks for You. Automatically.");
     expect(brand).toContain("/357-network-header.jpg");
   });
+
+  it("checks critical production columns instead of table existence alone", () => {
+    const status = readRepoFile("src/lib/system/status.functions.ts");
+
+    expect(status).toContain('select("id,user_id,job_id,status,submitted_at"');
+    expect(status).toContain('select("id,user_id,application_id,idempotency_key,state,receipt_id"');
+    expect(status).toContain('select("id,application_id,from_status,to_status"');
+    expect(status).toContain('select("id,application_id,application_url,verified,submitted_at"');
+  });
 });
