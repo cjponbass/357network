@@ -91,6 +91,9 @@ function ApplicationsPage() {
 
   async function updateStatus(id: string, status: ApplicationStatus) {
     if (!user) return;
+    const currentApplication = applications.find((application) => application.id === id);
+    if (!currentApplication || currentApplication.status === status) return;
+
     setError(null);
     const changes = {
       status,
@@ -101,8 +104,20 @@ function ApplicationsPage() {
       .update(changes)
       .eq("id", id)
       .eq("user_id", user.id);
-    if (updateError) setError(updateError.message);
-    else await load();
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    const { error: eventError } = await supabase.from("application_status_events").insert({
+      application_id: id,
+      from_status: currentApplication.status,
+      to_status: status,
+      note: "Updated from applications list",
+    });
+
+    await load();
+    if (eventError) setError(`Status changed, but history could not be recorded: ${eventError.message}`);
   }
 
   async function removeApplication(id: string) {
