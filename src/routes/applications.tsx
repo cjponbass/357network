@@ -74,17 +74,31 @@ function ApplicationsPage() {
     if (!user || !jobId) return;
     setBusy(true);
     setError(null);
-    const { error: insertError } = await supabase.from("applications").insert({
-      user_id: user.id,
-      job_id: jobId,
-      status: "draft",
-      notes: notes.trim() || null,
-    });
-    if (insertError) setError(insertError.message);
-    else {
+    const { data: createdApplication, error: insertError } = await supabase
+      .from("applications")
+      .insert({
+        user_id: user.id,
+        job_id: jobId,
+        status: "draft",
+        notes: notes.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      setError(insertError.message);
+    } else {
+      const { error: eventError } = await supabase.from("application_status_events").insert({
+        application_id: createdApplication.id,
+        from_status: null,
+        to_status: "draft",
+        note: "Application tracking created",
+      });
+
       setJobId("");
       setNotes("");
       await load();
+      if (eventError) setError(`Application created, but initial history could not be recorded: ${eventError.message}`);
     }
     setBusy(false);
   }
