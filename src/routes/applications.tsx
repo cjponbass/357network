@@ -144,8 +144,26 @@ function ApplicationsPage() {
       note: "Updated from applications list",
     });
 
+    if (eventError) {
+      const { error: rollbackError } = await supabase
+        .from("applications")
+        .update({
+          status: currentApplication.status,
+          submitted_at: currentApplication.submitted_at,
+        })
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      await load();
+      setError(
+        rollbackError
+          ? `Status history could not be recorded (${eventError.message}), and the status change could not be rolled back (${rollbackError.message}).`
+          : `Status history could not be recorded, so the status change was rolled back: ${eventError.message}`,
+      );
+      return;
+    }
+
     await load();
-    if (eventError) setError(`Status changed, but history could not be recorded: ${eventError.message}`);
   }
 
   async function removeApplication(id: string) {
