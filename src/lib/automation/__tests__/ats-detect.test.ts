@@ -38,6 +38,16 @@ describe("ATS URL detection", () => {
     expect(detectAts("https://example.com/?next=https://boards.greenhouse.io/acme").provider).toBe("unknown");
   });
 
+  it.each([
+    "https://www.greenhouse.io/",
+    "https://support.greenhouse.io/",
+    "https://www.lever.co/",
+    "https://help.lever.co/",
+    "https://www.ashbyhq.com/",
+  ])("does not treat corporate or support hosts as application targets: %s", (url) => {
+    expect(detectAts(url).provider).toBe("unknown");
+  });
+
   it("does not treat the general Workday company domain as an application tenant", () => {
     expect(detectAts("https://www.workday.com/en-us/company/careers.html").provider).toBe("unknown");
   });
