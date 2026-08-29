@@ -129,6 +129,10 @@ function DocumentsPage() {
   async function makeDefault(doc: CandidateDocument) {
     if (!user) return;
     setError(null);
+    const previousDefault = documents.find(
+      (candidate) => candidate.kind === doc.kind && candidate.is_default && candidate.id !== doc.id,
+    );
+
     const { error: clearError } = await supabase
       .from("documents")
       .update({ is_default: false })
@@ -138,13 +142,31 @@ function DocumentsPage() {
       setError(clearError.message);
       return;
     }
+
     const { error: setErrorResult } = await supabase
       .from("documents")
       .update({ is_default: true })
       .eq("id", doc.id)
       .eq("user_id", user.id);
-    if (setErrorResult) setError(setErrorResult.message);
-    else await load();
+    if (setErrorResult) {
+      if (previousDefault) {
+        const { error: restoreError } = await supabase
+          .from("documents")
+          .update({ is_default: true })
+          .eq("id", previousDefault.id)
+          .eq("user_id", user.id);
+        if (restoreError) {
+          setError(`${setErrorResult.message} Previous default restore also failed: ${restoreError.message}`);
+          await load();
+          return;
+        }
+      }
+      setError(setErrorResult.message);
+      await load();
+      return;
+    }
+
+    await load();
   }
 
   async function removeDocument(doc: CandidateDocument) {
