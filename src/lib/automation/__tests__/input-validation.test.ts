@@ -36,20 +36,30 @@ describe("automation input validation", () => {
 
   it.each([
     "http://localhost:3000/job",
+    "http://localhost./job",
     "http://jobs.localhost/job",
+    "http://jobs.localhost./job",
     "http://127.0.0.1/job",
     "http://10.0.0.5/job",
     "http://169.254.169.254/latest/meta-data",
     "http://172.16.1.10/job",
     "http://172.31.255.254/job",
     "http://192.168.1.20/job",
+    "http://[::]/job",
     "http://[::1]/job",
+    "http://[::ffff:127.0.0.1]/job",
     "http://[fc00::1]/job",
     "http://[fd12::1]/job",
     "http://[fe80::1]/job",
   ])("rejects local or private ATS target %j", (url) => {
     expect(() => validateAtsUrlInput({ url })).toThrow(
       "Application URL cannot target a local or private network address.",
+    );
+  });
+
+  it("rejects ATS URLs with embedded credentials", () => {
+    expect(() => validateAtsUrlInput({ url: "https://user:secret@example.com/job" })).toThrow(
+      "Application URL cannot contain embedded credentials.",
     );
   });
 
