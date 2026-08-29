@@ -41,10 +41,20 @@ describe("automation input validation", () => {
     "http://jobs.localhost./job",
     "http://127.0.0.1/job",
     "http://10.0.0.5/job",
+    "http://100.64.0.1/job",
+    "http://100.127.255.254/job",
     "http://169.254.169.254/latest/meta-data",
     "http://172.16.1.10/job",
     "http://172.31.255.254/job",
+    "http://192.0.0.1/job",
+    "http://192.0.2.1/job",
     "http://192.168.1.20/job",
+    "http://198.18.0.1/job",
+    "http://198.19.255.254/job",
+    "http://198.51.100.1/job",
+    "http://203.0.113.1/job",
+    "http://224.0.0.1/job",
+    "http://255.255.255.255/job",
     "http://[::]/job",
     "http://[::1]/job",
     "http://[::ffff:127.0.0.1]/job",
@@ -63,9 +73,12 @@ describe("automation input validation", () => {
     );
   });
 
-  it("does not over-block public addresses near private IPv4 ranges", () => {
-    expect(validateAtsUrlInput({ url: "https://172.32.0.1/job" })).toEqual({ url: "https://172.32.0.1/job" });
-  });
+  it.each(["https://100.128.0.1/job", "https://172.32.0.1/job", "https://198.20.0.1/job"])(
+    "does not over-block public address %j near reserved IPv4 ranges",
+    (url) => {
+      expect(validateAtsUrlInput({ url })).toEqual({ url });
+    },
+  );
 
   it("rejects oversized ATS URLs", () => {
     expect(() => validateAtsUrlInput({ url: `https://example.com/${"x".repeat(2048)}` })).toThrow(
