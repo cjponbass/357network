@@ -151,9 +151,9 @@ function ApplicationDetailPage() {
     setError(null);
     const oldStatus = application.status;
     const submittedAt =
-      status === "submitted" && !application.submitted_at
-        ? new Date().toISOString()
-        : application.submitted_at;
+      status === "submitted"
+        ? application.submitted_at ?? new Date().toISOString()
+        : null;
 
     const { error: updateError } = await supabase
       .from("applications")
