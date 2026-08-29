@@ -17,6 +17,13 @@ describe("application tracker route integrity", () => {
     );
   });
 
+  it("rolls back a newly created application if its initial history event fails", () => {
+    expect(applicationsRoute).toMatch(
+      /if \(eventError\)[\s\S]*\.from\("applications"\)[\s\S]*\.delete\(\)[\s\S]*\.eq\("id", createdApplication\.id\)[\s\S]*\.eq\("user_id", user\.id\)/,
+    );
+    expect(applicationsRoute).toContain("the incomplete application could not be rolled back");
+  });
+
   it("keeps submitted_at aligned with the selected tracker status", () => {
     expect(applicationsRoute).toMatch(
       /submitted_at:\s*status\s*===\s*"submitted"\s*\?\s*new Date\(\)\.toISOString\(\)\s*:\s*null/,
