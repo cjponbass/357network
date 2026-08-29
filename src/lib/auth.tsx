@@ -14,13 +14,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ session: null, user: null, loading: true });
 
   useEffect(() => {
+    let active = true;
+    let authEventReceived = false;
+
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      authEventReceived = true;
+      if (!active) return;
       setState({ session, user: session?.user ?? null, loading: false });
     });
+
     void supabase.auth.getSession().then(({ data }) => {
+      if (!active || authEventReceived) return;
       setState({ session: data.session, user: data.session?.user ?? null, loading: false });
     });
-    return () => subscription.subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
