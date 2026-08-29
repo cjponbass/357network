@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage, useAuth } from "@/lib/auth";
 import { MIN_PASSWORD_LENGTH, validateNewPassword } from "@/lib/auth-policy";
@@ -15,9 +15,11 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  if (!loading && user) {
-    void navigate({ to: "/dashboard", replace: true });
-  }
+  useEffect(() => {
+    if (!loading && user) {
+      void navigate({ to: "/dashboard", replace: true });
+    }
+  }, [loading, navigate, user]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
