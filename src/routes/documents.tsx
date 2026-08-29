@@ -150,22 +150,29 @@ function DocumentsPage() {
   async function removeDocument(doc: CandidateDocument) {
     if (!user) return;
     setError(null);
-    if (doc.storage_path) {
-      const { error: storageError } = await supabase.storage
-        .from(DOCUMENT_STORAGE_BUCKET)
-        .remove([doc.storage_path]);
-      if (storageError) {
-        setError(storageError.message);
-        return;
-      }
-    }
+
     const { error: deleteError } = await supabase
       .from("documents")
       .delete()
       .eq("id", doc.id)
       .eq("user_id", user.id);
-    if (deleteError) setError(deleteError.message);
-    else await load();
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    if (doc.storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from(DOCUMENT_STORAGE_BUCKET)
+        .remove([doc.storage_path]);
+      if (storageError) {
+        setError(`Document record deleted, but stored-file cleanup failed: ${storageError.message}`);
+        await load();
+        return;
+      }
+    }
+
+    await load();
   }
 
   if (loading || !user) return <main style={pageStyle}>Loading documents…</main>;
