@@ -56,17 +56,17 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
 
         if (supabaseServerReachable) {
           const tableChecks = await Promise.all([
-            checkTable("candidate_profiles", supabaseAdmin.from("candidate_profiles").select("user_id", { head: true }).limit(1)),
-            checkTable("user_preferences", supabaseAdmin.from("user_preferences").select("user_id", { head: true }).limit(1)),
-            checkTable("jobs", supabaseAdmin.from("jobs").select("id", { head: true }).limit(1)),
-            checkTable("applications", supabaseAdmin.from("applications").select("id", { head: true }).limit(1)),
-            checkTable("documents", supabaseAdmin.from("documents").select("id", { head: true }).limit(1)),
-            checkTable("saved_answers", supabaseAdmin.from("saved_answers").select("id", { head: true }).limit(1)),
-            checkTable("job_analyses", supabaseAdmin.from("job_analyses").select("id", { head: true }).limit(1)),
-            checkTable("application_materials", supabaseAdmin.from("application_materials").select("id", { head: true }).limit(1)),
-            checkTable("submission_attempts", supabaseAdmin.from("submission_attempts").select("id,idempotency_key", { head: true }).limit(1)),
-            checkTable("application_status_events", supabaseAdmin.from("application_status_events").select("id", { head: true }).limit(1)),
-            checkTable("submission_receipts", supabaseAdmin.from("submission_receipts").select("id", { head: true }).limit(1)),
+            checkTable("candidate_profiles", supabaseAdmin.from("candidate_profiles").select("user_id,headline,summary", { head: true }).limit(1)),
+            checkTable("user_preferences", supabaseAdmin.from("user_preferences").select("user_id,auto_submit_enabled", { head: true }).limit(1)),
+            checkTable("jobs", supabaseAdmin.from("jobs").select("id,created_by,title,company,application_url,ats_name", { head: true }).limit(1)),
+            checkTable("applications", supabaseAdmin.from("applications").select("id,user_id,job_id,status,submitted_at", { head: true }).limit(1)),
+            checkTable("documents", supabaseAdmin.from("documents").select("id,user_id,storage_path,kind", { head: true }).limit(1)),
+            checkTable("saved_answers", supabaseAdmin.from("saved_answers").select("id,user_id,question,answer", { head: true }).limit(1)),
+            checkTable("job_analyses", supabaseAdmin.from("job_analyses").select("id,user_id,job_id", { head: true }).limit(1)),
+            checkTable("application_materials", supabaseAdmin.from("application_materials").select("id,user_id,application_id,document_id", { head: true }).limit(1)),
+            checkTable("submission_attempts", supabaseAdmin.from("submission_attempts").select("id,user_id,application_id,idempotency_key,status", { head: true }).limit(1)),
+            checkTable("application_status_events", supabaseAdmin.from("application_status_events").select("id,application_id,from_status,to_status", { head: true }).limit(1)),
+            checkTable("submission_receipts", supabaseAdmin.from("submission_receipts").select("id,user_id,application_id,attempt_id,receipt_url", { head: true }).limit(1)),
           ]);
           missingCriticalTables = tableChecks.filter((result) => !result.ok).map((result) => result.name);
           criticalSchemaReady = missingCriticalTables.length === 0;
