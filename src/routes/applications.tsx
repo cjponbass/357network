@@ -95,10 +95,24 @@ function ApplicationsPage() {
         note: "Application tracking created",
       });
 
+      if (eventError) {
+        const { error: rollbackError } = await supabase
+          .from("applications")
+          .delete()
+          .eq("id", createdApplication.id)
+          .eq("user_id", user.id);
+        setError(
+          rollbackError
+            ? `Application history could not be recorded (${eventError.message}), and the incomplete application could not be rolled back (${rollbackError.message}).`
+            : `Application history could not be recorded: ${eventError.message}`,
+        );
+        setBusy(false);
+        return;
+      }
+
       setJobId("");
       setNotes("");
       await load();
-      if (eventError) setError(`Application created, but initial history could not be recorded: ${eventError.message}`);
     }
     setBusy(false);
   }
