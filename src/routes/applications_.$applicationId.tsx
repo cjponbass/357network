@@ -150,6 +150,7 @@ function ApplicationDetailPage() {
     setBusy(true);
     setError(null);
     const oldStatus = application.status;
+    const oldSubmittedAt = application.submitted_at;
     const submittedAt =
       status === "submitted"
         ? application.submitted_at ?? new Date().toISOString()
@@ -180,7 +181,18 @@ function ApplicationDetailPage() {
         to_status: status,
         note: "Updated from application detail workspace",
       });
-      if (eventError) setError(eventError.message);
+      if (eventError) {
+        const { error: rollbackError } = await supabase
+          .from("applications")
+          .update({ status: oldStatus, submitted_at: oldSubmittedAt })
+          .eq("id", applicationId)
+          .eq("user_id", user.id);
+        setError(
+          rollbackError
+            ? `${eventError.message} Rollback also failed: ${rollbackError.message}`
+            : `${eventError.message} The status change was rolled back.`,
+        );
+      }
     }
 
     await load();
