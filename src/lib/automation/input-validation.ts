@@ -35,7 +35,18 @@ function isLocalOrPrivateHost(hostname: string) {
     .replace(/\]$/, "")
     .replace(/\.+$/, "");
 
-  if (host === "localhost" || host.endsWith(".localhost") || isPrivateIpv4(host)) return true;
+  if (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".lan") ||
+    host.endsWith(".home.arpa") ||
+    (!host.includes(".") && !host.includes(":")) ||
+    isPrivateIpv4(host)
+  ) {
+    return true;
+  }
   if (
     host === "::" ||
     host === "::1" ||
