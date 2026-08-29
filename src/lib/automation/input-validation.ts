@@ -21,10 +21,23 @@ function isPrivateIpv4(hostname: string) {
 }
 
 function isLocalOrPrivateHost(hostname: string) {
-  const host = hostname.toLowerCase().replace(/^\[/, "").replace(/\]$/, "");
+  const host = hostname
+    .toLowerCase()
+    .replace(/^\[/, "")
+    .replace(/\]$/, "")
+    .replace(/\.+$/, "");
 
   if (host === "localhost" || host.endsWith(".localhost") || isPrivateIpv4(host)) return true;
-  if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || /^fe[89ab]/.test(host)) return true;
+  if (
+    host === "::" ||
+    host === "::1" ||
+    host.startsWith("::ffff:") ||
+    host.startsWith("fc") ||
+    host.startsWith("fd") ||
+    /^fe[89ab]/.test(host)
+  ) {
+    return true;
+  }
 
   return false;
 }
@@ -57,6 +70,9 @@ export function validateAtsUrlInput(input: { url: string | null }) {
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
     throw new Error("A valid HTTP(S) application URL is required.");
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error("Application URL cannot contain embedded credentials.");
   }
   if (isLocalOrPrivateHost(parsed.hostname)) {
     throw new Error("Application URL cannot target a local or private network address.");
