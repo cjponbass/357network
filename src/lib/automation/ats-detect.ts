@@ -17,17 +17,21 @@ interface HostRule {
 const RULES: HostRule[] = [
   {
     provider: "greenhouse",
-    test: (h) => /(^|\.)greenhouse\.io$/.test(h) || /(^|\.)grnh\.se$/.test(h),
+    test: (h) =>
+      h === "boards.greenhouse.io" ||
+      h === "job-boards.greenhouse.io" ||
+      h === "grnh.se" ||
+      h.endsWith(".grnh.se"),
     reason: "Host is a Greenhouse job board domain.",
   },
   {
     provider: "lever",
-    test: (h) => /(^|\.)lever\.co$/.test(h),
+    test: (h) => h === "jobs.lever.co" || h === "hire.lever.co",
     reason: "Host is a Lever job board domain.",
   },
   {
     provider: "ashby",
-    test: (h) => /(^|\.)ashbyhq\.com$/.test(h),
+    test: (h) => h === "jobs.ashbyhq.com",
     reason: "Host is an Ashby job board domain.",
   },
   {
