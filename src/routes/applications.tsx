@@ -71,14 +71,22 @@ function ApplicationsPage() {
 
   async function createApplication(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || !jobId) return;
+    if (!user) return;
+
+    const normalizedJobId = jobId.trim();
+    const selectedJob = availableJobs.find((job) => job.id === normalizedJobId);
+    if (!selectedJob) {
+      setError("Choose an available saved job before creating an application.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
     const { data: createdApplication, error: insertError } = await supabase
       .from("applications")
       .insert({
         user_id: user.id,
-        job_id: jobId,
+        job_id: selectedJob.id,
         status: "draft",
         notes: notes.trim() || null,
       })
