@@ -58,13 +58,22 @@ function SettingsPage() {
     setBusy(true);
     setMessage(null);
     setError(null);
+
+    const normalizedMinSalary = minSalary.trim();
+    const parsedMinSalary = normalizedMinSalary ? Number(normalizedMinSalary) : null;
+    if (parsedMinSalary !== null && (!Number.isFinite(parsedMinSalary) || parsedMinSalary < 0)) {
+      setError("Minimum salary must be a valid non-negative number.");
+      setBusy(false);
+      return;
+    }
+
     const { error: saveError } = await supabase.from("user_preferences").upsert(
       {
         user_id: user.id,
         desired_titles: splitList(titles),
         desired_locations: splitList(locations),
         work_arrangements: arrangements,
-        min_salary: minSalary.trim() ? Number(minSalary) : null,
+        min_salary: parsedMinSalary,
         currency: currency.trim() ? currency.trim().toUpperCase() : null,
         email_notifications: emailNotifications,
         weekly_digest: weeklyDigest,
