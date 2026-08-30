@@ -45,14 +45,22 @@ function JobsPage() {
   async function addJob(event: React.FormEvent) {
     event.preventDefault();
     if (!user) return;
+
+    const normalizedTitle = title.trim();
+    const normalizedCompany = company.trim();
+    if (!normalizedTitle || !normalizedCompany) {
+      setError("Job title and company are required.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
     const sourceUrl = url.trim() || null;
     const detection = detectAts(sourceUrl);
     const { error: insertError } = await supabase.from("jobs").insert({
       created_by: user.id,
-      title: title.trim(),
-      company: company.trim(),
+      title: normalizedTitle,
+      company: normalizedCompany,
       location: location.trim() || null,
       description: description.trim() || null,
       source_url: sourceUrl,
