@@ -58,6 +58,15 @@ function SavedAnswersPage() {
     if (!user) return;
     setBusy(true);
     setError(null);
+
+    const normalizedQuestion = question.trim();
+    const normalizedAnswer = answer.trim();
+    if (!normalizedQuestion || !normalizedAnswer) {
+      setError("Question and answer must contain non-whitespace text.");
+      setBusy(false);
+      return;
+    }
+
     const parsedTags = tags
       .split(",")
       .map((tag) => tag.trim())
@@ -65,8 +74,8 @@ function SavedAnswersPage() {
 
     const payload = {
       user_id: user.id,
-      question: question.trim(),
-      answer: answer.trim(),
+      question: normalizedQuestion,
+      answer: normalizedAnswer,
       tags: parsedTags,
       updated_at: new Date().toISOString(),
     };
