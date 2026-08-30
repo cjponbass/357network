@@ -49,9 +49,15 @@ function ProfilePage() {
     if (!user) return;
     setBusy(true); setMessage(null); setError(null);
     const years = form.years_experience.trim();
+    const yearsExperience = years ? Number(years) : null;
+    if (yearsExperience !== null && (!Number.isFinite(yearsExperience) || yearsExperience < 0)) {
+      setError("Years of experience must be a non-negative number.");
+      setBusy(false);
+      return;
+    }
     const values: CandidateProfileUpdate = {
       full_name: form.full_name.trim(), headline: nullable(form.headline), email: nullable(form.email), phone: nullable(form.phone),
-      location: nullable(form.location), years_experience: years ? Number(years) : null,
+      location: nullable(form.location), years_experience: yearsExperience,
       skills: form.skills.split(",").map((v) => v.trim()).filter(Boolean), work_authorization: nullable(form.work_authorization),
       linkedin_url: nullable(form.linkedin_url), github_url: nullable(form.github_url), website_url: nullable(form.website_url),
     };
