@@ -35,6 +35,22 @@ export interface SuggestedAnswerResult {
   prompt_version: string;
 }
 
+type JobInput = { jobId: string };
+type AnswerInput = JobInput & { question: string };
+
+function validateJobInput(input: JobInput): JobInput {
+  const jobId = typeof input?.jobId === "string" ? input.jobId.trim() : "";
+  if (!jobId) throw new Error("A valid saved job is required.");
+  return { jobId };
+}
+
+function validateAnswerInput(input: AnswerInput): AnswerInput {
+  const { jobId } = validateJobInput(input);
+  const question = typeof input?.question === "string" ? input.question.trim() : "";
+  if (!question) throw new Error("An application question is required.");
+  return { jobId, question };
+}
+
 export const getAiStatus = createServerFn({ method: "GET" }).handler(
   async (): Promise<AiStatusResult> => {
     const { aiStatus } = await import("./provider.server");
@@ -44,7 +60,7 @@ export const getAiStatus = createServerFn({ method: "GET" }).handler(
 
 export const analyzeJobFit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { jobId: string }) => input)
+  .inputValidator(validateJobInput)
   .handler(async ({ data, context }): Promise<FitAnalysisResult> => {
     const { runAnalyzeJobFit } = await import("./tasks.server");
     return runAnalyzeJobFit(context.supabase, context.userId, data.jobId);
@@ -52,7 +68,7 @@ export const analyzeJobFit = createServerFn({ method: "POST" })
 
 export const generateTailoredResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { jobId: string }) => input)
+  .inputValidator(validateJobInput)
   .handler(async ({ data, context }): Promise<GeneratedTextResult> => {
     const { runGenerateTailoredResume } = await import("./tasks.server");
     return runGenerateTailoredResume(context.supabase, context.userId, data.jobId);
@@ -60,7 +76,7 @@ export const generateTailoredResume = createServerFn({ method: "POST" })
 
 export const generateCoverLetter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { jobId: string }) => input)
+  .inputValidator(validateJobInput)
   .handler(async ({ data, context }): Promise<GeneratedTextResult> => {
     const { runGenerateCoverLetter } = await import("./tasks.server");
     return runGenerateCoverLetter(context.supabase, context.userId, data.jobId);
@@ -68,7 +84,7 @@ export const generateCoverLetter = createServerFn({ method: "POST" })
 
 export const suggestApplicationAnswer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { jobId: string; question: string }) => input)
+  .inputValidator(validateAnswerInput)
   .handler(async ({ data, context }): Promise<SuggestedAnswerResult> => {
     const { runSuggestApplicationAnswer } = await import("./tasks.server");
     return runSuggestApplicationAnswer(context.supabase, context.userId, data.jobId, data.question);
