@@ -7,7 +7,7 @@ on:
     branches: [job-platform-rebuild]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -19,20 +19,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npx --yes pnpm@10.15.0 install --no-frozen-lockfile
-      - name: Commit generated lockfile when missing
-        if: ${{ github.event_name == 'push' && hashFiles('pnpm-lock.yaml') != '' }}
-        shell: bash
-        run: |
-          if git cat-file -e "HEAD:pnpm-lock.yaml" 2>/dev/null; then
-            echo "pnpm-lock.yaml is already committed."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml
-          git commit -m "Commit generated pnpm lockfile"
-          git push origin HEAD:job-platform-rebuild
+        run: npx --yes pnpm@10.15.0 install --frozen-lockfile
       - name: Typecheck
         run: npx --yes pnpm@10.15.0 run typecheck
       - name: Lint
