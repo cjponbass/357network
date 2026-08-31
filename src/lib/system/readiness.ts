@@ -6,6 +6,7 @@ export type ReadinessInputs = {
   supabaseClient: boolean;
   aiConfigured: boolean;
   browserProviderExecutable: boolean;
+  browserProviderHealthVerified: boolean;
   submitEnabled: boolean;
 };
 
@@ -30,6 +31,9 @@ export function deriveReadinessGates(input: ReadinessInputs): ReadinessGates {
     readyForAiPreparation: dataPlaneReady && input.aiConfigured,
     readyForAutomationDryRun: automationDataReady && input.browserProviderExecutable,
     readyForVerifiedSubmission:
-      automationDataReady && input.browserProviderExecutable && input.submitEnabled,
+      automationDataReady &&
+      input.browserProviderExecutable &&
+      input.browserProviderHealthVerified &&
+      input.submitEnabled,
   };
 }
