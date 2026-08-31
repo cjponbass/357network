@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getSubmissionDisabledResult } from "../submission-safety";
+import {
+  canAutoSubmitApplicationStatus,
+  getApplicationStateBlockedResult,
+  getSubmissionDisabledResult,
+} from "../submission-safety";
 
 describe("final submission safety policy", () => {
   it("blocks final submission when the submit switch is disabled", () => {
@@ -65,5 +69,33 @@ describe("final submission safety policy", () => {
         submitEnabled: true,
       }),
     ).toBeNull();
+  });
+
+  it("allows automatic submission only for draft applications", () => {
+    expect(canAutoSubmitApplicationStatus("draft")).toBe(true);
+    for (const status of ["submitted", "in_review", "interview", "offer", "rejected", "withdrawn", null, undefined]) {
+      expect(canAutoSubmitApplicationStatus(status)).toBe(false);
+    }
+  });
+
+  it("returns a no-send result for non-draft application states", () => {
+    const config = {
+      configured: true,
+      provider: "browserbase",
+      executable: true,
+      submitEnabled: true,
+    };
+
+    expect(getApplicationStateBlockedResult("draft", config)).toBeNull();
+    expect(getApplicationStateBlockedResult("submitted", config)).toEqual({
+      attemptId: null,
+      state: "needs_user_input",
+      errorCategory: "already_submitted",
+      receiptId: null,
+      message:
+        "Automatic submission is only allowed while this application is in Draft status. Nothing was sent to the employer or ATS.",
+      automationConfigured: true,
+      automationProvider: "browserbase",
+    });
   });
 });
