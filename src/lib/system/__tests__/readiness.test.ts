@@ -10,6 +10,7 @@ const fullyReady: ReadinessInputs = {
   supabaseClient: true,
   aiConfigured: true,
   browserProviderExecutable: true,
+  browserProviderHealthVerified: true,
   submitEnabled: true,
 };
 
@@ -44,6 +45,12 @@ describe("deployment readiness gates", () => {
     ).toBe(false);
   });
 
+  it("allows dry-run readiness before browser health is verified", () => {
+    const result = deriveReadinessGates({ ...fullyReady, browserProviderHealthVerified: false });
+    expect(result.readyForAutomationDryRun).toBe(true);
+    expect(result.readyForVerifiedSubmission).toBe(false);
+  });
+
   it("never reports verified submission ready while the submit boundary is disabled", () => {
     const result = deriveReadinessGates({ ...fullyReady, submitEnabled: false });
     expect(result.readyForAutomationDryRun).toBe(true);
@@ -60,6 +67,7 @@ describe("deployment readiness gates", () => {
       "candidateDocumentsBucketReady",
       "supabaseClient",
       "browserProviderExecutable",
+      "browserProviderHealthVerified",
       "submitEnabled",
     ] as const) {
       expect(
