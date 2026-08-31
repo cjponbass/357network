@@ -39,6 +39,24 @@ describe("ATS URL detection", () => {
   });
 
   it.each([
+    "https://boards.greenhouse.io.evil.example/acme/jobs/123",
+    "https://jobs.lever.co.evil.example/acme/123",
+    "https://jobs.ashbyhq.com.evil.example/acme/123",
+    "https://acme.wd1.myworkdayjobs.com.evil.example/job/123",
+    "https://greenhouse.io.evil.example/boards.greenhouse.io/acme",
+  ])("rejects deceptive ATS look-alike hosts: %s", (url) => {
+    expect(detectAts(url).provider).toBe("unknown");
+  });
+
+  it.each([
+    "ftp://jobs.lever.co/acme/123",
+    "file://boards.greenhouse.io/acme/jobs/123",
+    "javascript://jobs.ashbyhq.com/acme/123",
+  ])("rejects non-HTTP(S) ATS-looking URLs: %s", (url) => {
+    expect(detectAts(url).provider).toBe("unknown");
+  });
+
+  it.each([
     "https://www.greenhouse.io/",
     "https://support.greenhouse.io/",
     "https://www.lever.co/",
