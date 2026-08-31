@@ -15,6 +15,38 @@ export interface SubmissionDisabledResult {
   automationProvider: string | null;
 }
 
+export interface ApplicationStateBlockedResult {
+  attemptId: null;
+  state: "needs_user_input";
+  errorCategory: "already_submitted";
+  receiptId: null;
+  message: string;
+  automationConfigured: boolean;
+  automationProvider: string | null;
+}
+
+export function canAutoSubmitApplicationStatus(status: string | null | undefined): boolean {
+  return status === "draft";
+}
+
+export function getApplicationStateBlockedResult(
+  status: string | null | undefined,
+  config: SubmissionSafetyConfig,
+): ApplicationStateBlockedResult | null {
+  if (canAutoSubmitApplicationStatus(status)) return null;
+
+  return {
+    attemptId: null,
+    state: "needs_user_input",
+    errorCategory: "already_submitted",
+    receiptId: null,
+    message:
+      "Automatic submission is only allowed while this application is in Draft status. Nothing was sent to the employer or ATS.",
+    automationConfigured: config.configured,
+    automationProvider: config.provider,
+  };
+}
+
 export function getSubmissionDisabledResult(
   config: SubmissionSafetyConfig,
 ): SubmissionDisabledResult | null {
