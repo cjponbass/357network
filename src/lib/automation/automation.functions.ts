@@ -4,7 +4,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { AtsDetection } from "./ats-detect";
 import { validateApplicationId, validateAtsUrlInput, validateSubmissionInput } from "./input-validation";
-import { getSubmissionDisabledResult } from "./submission-safety";
+import {
+  getApplicationStateBlockedResult,
+  getSubmissionDisabledResult,
+} from "./submission-safety";
 import {
   IMPLEMENTED_PROVIDERS,
   type AutomationErrorCategory,
@@ -75,6 +78,19 @@ export const startSubmission = createServerFn({ method: "POST" })
     const disabledResult = getSubmissionDisabledResult(config);
 
     if (disabledResult) return disabledResult;
+
+    const { data: application, error: applicationError } = await context.supabase
+      .from("applications")
+      .select("status")
+      .eq("id", data.applicationId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (applicationError) throw new Error(applicationError.message);
+    if (!application) throw new Error("Application not found.");
+
+    const stateBlockedResult = getApplicationStateBlockedResult(application.status, config);
+    if (stateBlockedResult) return stateBlockedResult;
 
     const { runSubmission } = await import("./orchestrator.server");
     return runSubmission(
