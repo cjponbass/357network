@@ -27,6 +27,10 @@ const DRIVER_REQUIRED_CONFIG: Record<string, string[] | undefined> = {
 };
 
 const PROVIDER_CACHE = new Map<string, Promise<BrowserAutomationProvider>>();
+const HEALTH_CACHE = new Map<string, { result: boolean; expiresAt: number }>();
+const HEALTH_PENDING = new Map<string, Promise<boolean>>();
+const HEALTH_SUCCESS_TTL_MS = 5 * 60 * 1000;
+const HEALTH_FAILURE_TTL_MS = 30 * 1000;
 
 function hasConfiguredValue(key: string): boolean {
   return Boolean(process.env[key]?.trim());
@@ -83,15 +87,43 @@ export function detectProviderConfig(): ProviderConfig {
 /**
  * Verifies that the selected configured provider can establish a real browser
  * session. This check never navigates to an employer site and never submits.
+ * Successful checks are cached briefly per user/provider so a Settings page
+ * refresh cannot create a new paid browser session on every request. Failed
+ * checks are cached only briefly, and concurrent checks share one probe.
  */
 export async function verifyBrowserProviderHealth(owner: ProviderOwner): Promise<boolean> {
   const config = detectProviderConfig();
   if (!config.executable || !config.provider) return false;
-  if (config.provider === "browserbase") {
-    const { verifyBrowserbaseHealth } = await import("./health.server");
-    return verifyBrowserbaseHealth(owner);
+
+  const cacheKey = providerCacheKey(config.provider, owner);
+  const now = Date.now();
+  const cached = HEALTH_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.result;
+  if (cached) HEALTH_CACHE.delete(cacheKey);
+
+  const pending = HEALTH_PENDING.get(cacheKey);
+  if (pending) return pending;
+
+  const probe = (async () => {
+    let result = false;
+    if (config.provider === "browserbase") {
+      const { verifyBrowserbaseHealth } = await import("./health.server");
+      result = await verifyBrowserbaseHealth(owner);
+    }
+
+    HEALTH_CACHE.set(cacheKey, {
+      result,
+      expiresAt: Date.now() + (result ? HEALTH_SUCCESS_TTL_MS : HEALTH_FAILURE_TTL_MS),
+    });
+    return result;
+  })();
+
+  HEALTH_PENDING.set(cacheKey, probe);
+  try {
+    return await probe;
+  } finally {
+    HEALTH_PENDING.delete(cacheKey);
   }
-  return false;
 }
 
 export async function resolveBrowserProvider(
