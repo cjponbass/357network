@@ -19,7 +19,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npx --yes pnpm@10.15.0 install --frozen-lockfile
+        # TODO: switch back to --frozen-lockfile as soon as pnpm-lock.yaml is committed.
+        # The repository currently has no lockfile, so frozen installs cannot succeed.
+        run: npx --yes pnpm@10.15.0 install --no-frozen-lockfile
       - name: Typecheck
         run: npx --yes pnpm@10.15.0 run typecheck
       - name: Lint
