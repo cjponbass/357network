@@ -68,6 +68,20 @@ describe("Supabase migration integrity", () => {
     expect(receiptStateConsistency).toMatch(/CHECK\s*\(\s*receipt_id\s+IS\s+NULL\s+OR\s+state\s*=\s*'succeeded'\s*\)/i);
   });
 
+  it("requires draft tracker status before a live attempt can queue or run", () => {
+    const liveDraftGuard = readFileSync(
+      resolve(migrationDir, "20260831104500_live_submission_requires_draft.sql"),
+      "utf8",
+    );
+
+    expect(liveDraftGuard).toContain("enforce_live_submission_requires_draft");
+    expect(liveDraftGuard).toMatch(/NEW\.dry_run\s*=\s*false/i);
+    expect(liveDraftGuard).toMatch(/NEW\.state\s+IN\s*\(\s*'queued'\s*,\s*'running'\s*\)/i);
+    expect(liveDraftGuard).toMatch(/application_status\s+IS\s+DISTINCT\s+FROM\s+'draft'/i);
+    expect(liveDraftGuard).toMatch(/BEFORE\s+INSERT\s+OR\s+UPDATE\s+OF\s+application_id,\s*user_id,\s*dry_run,\s*state/i);
+    expect(liveDraftGuard).toContain("REVOKE ALL ON FUNCTION public.enforce_live_submission_requires_draft()");
+  });
+
   it("keeps saved jobs private to their owning user", () => {
     const savedJobPrivacy = readFileSync(
       resolve(migrationDir, "20260827134700_private_saved_jobs.sql"),
