@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npx --yes pnpm@10.15.0 install --no-frozen-lockfile
+        run: npx --yes pnpm@10.15.0 install --frozen-lockfile
       - name: Typecheck
         run: npx --yes pnpm@10.15.0 run typecheck
       - name: Lint
