@@ -39,13 +39,14 @@ describe("browser provider health caching", () => {
   it("does not share health verification across users", async () => {
     configureBrowserbase();
     const suffix = Date.now();
+    const firstOwner = { userId: `cache-user-a-${suffix}` };
+    const secondOwner = { userId: `cache-user-b-${suffix}` };
 
-    await expect(
-      Promise.all([
-        verifyBrowserProviderHealth({ userId: `cache-user-a-${suffix}` }),
-        verifyBrowserProviderHealth({ userId: `cache-user-b-${suffix}` }),
-      ]),
-    ).resolves.toEqual([true, true]);
+    // Probe different users sequentially so this test verifies cache isolation
+    // without also depending on concurrent first-time dynamic module loading.
+    // Same-user concurrency is covered independently below.
+    await expect(verifyBrowserProviderHealth(firstOwner)).resolves.toBe(true);
+    await expect(verifyBrowserProviderHealth(secondOwner)).resolves.toBe(true);
 
     expect(verifyBrowserbaseHealth).toHaveBeenCalledTimes(2);
   });
