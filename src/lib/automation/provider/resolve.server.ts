@@ -80,6 +80,20 @@ export function detectProviderConfig(): ProviderConfig {
   };
 }
 
+/**
+ * Verifies that the selected configured provider can establish a real browser
+ * session. This check never navigates to an employer site and never submits.
+ */
+export async function verifyBrowserProviderHealth(owner: ProviderOwner): Promise<boolean> {
+  const config = detectProviderConfig();
+  if (!config.executable || !config.provider) return false;
+  if (config.provider === "browserbase") {
+    const { verifyBrowserbaseHealth } = await import("./health.server");
+    return verifyBrowserbaseHealth(owner);
+  }
+  return false;
+}
+
 export async function resolveBrowserProvider(
   owner: ProviderOwner,
 ): Promise<BrowserAutomationProvider | null> {
