@@ -26,12 +26,15 @@ export interface DeploymentStatus {
 
 export const getDeploymentStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<DeploymentStatus> => {
+  .handler(async ({ context }): Promise<DeploymentStatus> => {
     const { aiStatus } = await import("@/lib/ai/provider.server");
-    const { detectProviderConfig } = await import("@/lib/automation/provider/resolve.server");
+    const { detectProviderConfig, verifyBrowserProviderHealth } = await import("@/lib/automation/provider/resolve.server");
 
     const ai = aiStatus();
     const browser = detectProviderConfig();
+    const browserProviderHealthVerified = browser.executable
+      ? await verifyBrowserProviderHealth({ userId: context.userId })
+      : false;
     const supabaseServer = Boolean(
       process.env["SUPABASE_URL"] && process.env["SUPABASE_SERVICE_ROLE_KEY"],
     );
@@ -91,7 +94,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
     if (!supabaseClient) readinessNotes.push("Supabase browser environment variables are incomplete.");
     if (!ai.configured) readinessNotes.push("AI preparation is disabled until the OpenAI provider is configured.");
     if (!browser.executable) readinessNotes.push("Browser automation cannot run until the browser provider is executable.");
-    if (!browser.healthVerified) readinessNotes.push("Browser automation provider health has not yet been verified by a controlled connectivity check.");
+    if (browser.executable && !browserProviderHealthVerified) readinessNotes.push("Browser automation provider connectivity could not be verified by the controlled health check.");
     if (!browser.submitEnabled) readinessNotes.push("Final automated submit is intentionally disabled pending controlled validation.");
 
     const readiness = deriveReadinessGates({
@@ -102,7 +105,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       supabaseClient,
       aiConfigured: ai.configured,
       browserProviderExecutable: browser.executable,
-      browserProviderHealthVerified: browser.healthVerified,
+      browserProviderHealthVerified,
       submitEnabled: browser.submitEnabled,
     });
 
@@ -116,7 +119,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       aiConfigured: ai.configured,
       browserProviderConfigured: browser.configured,
       browserProviderExecutable: browser.executable,
-      browserProviderHealthVerified: browser.healthVerified,
+      browserProviderHealthVerified,
       browserProvider: browser.provider,
       submitEnabled: browser.submitEnabled,
       missingBrowserConfig: browser.missingConfig,
