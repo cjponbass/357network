@@ -30,6 +30,7 @@ describe("Supabase migration integrity", () => {
       "20260827100000_backfill_verified_receipt_tracker.sql",
       "20260827163000_receipt_document_ownership.sql",
       "20260827174500_attempt_receipt_application_integrity.sql",
+      "20260831005000_submission_receipt_state_consistency.sql",
     ];
 
     for (const file of requiredOrder) {
@@ -53,11 +54,18 @@ describe("Supabase migration integrity", () => {
       resolve(migrationDir, "20260827050000_verified_receipt_delete_guard.sql"),
       "utf8",
     );
+    const receiptStateConsistency = readFileSync(
+      resolve(migrationDir, "20260831005000_submission_receipt_state_consistency.sql"),
+      "utf8",
+    );
 
     expect(expressesVerifiedTrue(verifiedOnly)).toBe(true);
     expect(successGuard).toContain("state = 'succeeded'");
     expect(expressesVerifiedTrue(successGuard)).toBe(true);
     expect(expressesVerifiedTrue(deleteGuard)).toBe(true);
+    expect(receiptStateConsistency).toMatch(/SET\s+receipt_id\s*=\s*NULL[\s\S]*WHERE\s+state\s*<>\s*'succeeded'/i);
+    expect(receiptStateConsistency).toContain("submission_attempts_receipt_requires_success");
+    expect(receiptStateConsistency).toMatch(/CHECK\s*\(\s*receipt_id\s+IS\s+NULL\s+OR\s+state\s*=\s*'succeeded'\s*\)/i);
   });
 
   it("keeps saved jobs private to their owning user", () => {
