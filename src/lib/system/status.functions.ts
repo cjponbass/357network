@@ -13,6 +13,7 @@ export interface DeploymentStatus {
   aiConfigured: boolean;
   browserProviderConfigured: boolean;
   browserProviderExecutable: boolean;
+  browserProviderHealthVerified: boolean;
   browserProvider: string | null;
   submitEnabled: boolean;
   missingBrowserConfig: string[];
@@ -90,6 +91,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
     if (!supabaseClient) readinessNotes.push("Supabase browser environment variables are incomplete.");
     if (!ai.configured) readinessNotes.push("AI preparation is disabled until the OpenAI provider is configured.");
     if (!browser.executable) readinessNotes.push("Browser automation cannot run until the browser provider is executable.");
+    if (!browser.healthVerified) readinessNotes.push("Browser automation provider health has not yet been verified by a controlled connectivity check.");
     if (!browser.submitEnabled) readinessNotes.push("Final automated submit is intentionally disabled pending controlled validation.");
 
     const readiness = deriveReadinessGates({
@@ -100,6 +102,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       supabaseClient,
       aiConfigured: ai.configured,
       browserProviderExecutable: browser.executable,
+      browserProviderHealthVerified: browser.healthVerified,
       submitEnabled: browser.submitEnabled,
     });
 
@@ -113,6 +116,7 @@ export const getDeploymentStatus = createServerFn({ method: "GET" })
       aiConfigured: ai.configured,
       browserProviderConfigured: browser.configured,
       browserProviderExecutable: browser.executable,
+      browserProviderHealthVerified: browser.healthVerified,
       browserProvider: browser.provider,
       submitEnabled: browser.submitEnabled,
       missingBrowserConfig: browser.missingConfig,
