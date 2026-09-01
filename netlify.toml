@@ -20,10 +20,51 @@
 [[headers]]
   for = "/*"
   [headers.values]
+    Strict-Transport-Security = "max-age=31536000"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
+    X-Permitted-Cross-Domain-Policies = "none"
+    X-DNS-Prefetch-Control = "off"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
+# Candidate account/application pages can contain private profile, document,
+# answer, and application data. Explicitly prevent browser/CDN caching.
+[[headers]]
+  for = "/dashboard"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/applications/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/profile"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/settings"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/documents"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/answers"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/prepare"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
 
 # The approved panoramic brand artwork is versioned in Git and can be cached.
 [[headers]]
