@@ -50,16 +50,19 @@ describe("production deployment contract", () => {
     expect(netlify).toContain('Cross-Origin-Opener-Policy = "same-origin"');
   });
 
-  it("prevents caching of authenticated candidate workflow pages", () => {
+  it("prevents caching of private candidate and authentication pages", () => {
     const netlify = readRepoFile("netlify.toml");
     const privateRoutes = [
       "/dashboard",
+      "/jobs",
       "/applications/*",
       "/profile",
       "/settings",
       "/documents",
       "/answers",
       "/prepare",
+      "/auth",
+      "/reset-password",
     ];
 
     for (const route of privateRoutes) {
