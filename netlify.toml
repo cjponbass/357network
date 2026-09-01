@@ -29,10 +29,16 @@
     Cross-Origin-Opener-Policy = "same-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 
-# Candidate account/application pages can contain private profile, document,
-# answer, and application data. Explicitly prevent browser/CDN caching.
+# Candidate account/application pages can contain private profile, saved-job,
+# document, answer, application, or authentication state. Explicitly prevent
+# browser/CDN caching for these routes, including password recovery surfaces.
 [[headers]]
   for = "/dashboard"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/jobs"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
 
@@ -63,6 +69,16 @@
 
 [[headers]]
   for = "/prepare"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/auth"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+
+[[headers]]
+  for = "/reset-password"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
 
