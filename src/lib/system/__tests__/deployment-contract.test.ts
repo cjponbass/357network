@@ -40,6 +40,36 @@ describe("production deployment contract", () => {
     expect(netlify).not.toContain('command = "bun run build"');
   });
 
+  it("enforces baseline production transport and browser hardening", () => {
+    const netlify = readRepoFile("netlify.toml");
+
+    expect(netlify).toContain('Strict-Transport-Security = "max-age=31536000"');
+    expect(netlify).toContain('X-Content-Type-Options = "nosniff"');
+    expect(netlify).toContain('X-Frame-Options = "DENY"');
+    expect(netlify).toContain('X-Permitted-Cross-Domain-Policies = "none"');
+    expect(netlify).toContain('Cross-Origin-Opener-Policy = "same-origin"');
+  });
+
+  it("prevents caching of authenticated candidate workflow pages", () => {
+    const netlify = readRepoFile("netlify.toml");
+    const privateRoutes = [
+      "/dashboard",
+      "/applications/*",
+      "/profile",
+      "/settings",
+      "/documents",
+      "/answers",
+      "/prepare",
+    ];
+
+    for (const route of privateRoutes) {
+      expect(netlify).toContain(`for = "${route}"`);
+    }
+    expect(netlify.match(/Cache-Control = "private, no-store, max-age=0"/g)?.length).toBe(
+      privateRoutes.length,
+    );
+  });
+
   it("preserves the approved 357 Network header asset and exact tagline", () => {
     expect(existsSync(resolve(root, "public/357-network-header.jpg"))).toBe(true);
 
