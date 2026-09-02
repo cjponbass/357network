@@ -2,11 +2,11 @@
 
 **Where Opportunity Knocks for You. Automatically.**
 
-357 Network is being rebuilt as a job-application SaaS that helps authenticated users save jobs, prepare application materials, manage private candidate data, track applications, and safely automate supported ATS workflows.
+357 Network is a private job-application SaaS for saving opportunities, preparing application materials, managing candidate data, tracking applications, and safely automating supported ATS workflows.
 
-The approved brand header is the user-supplied black-and-white panoramic 357 Network artwork. The application expects that exact asset at `/357-network-header.jpg`. Do not substitute generated artwork if the binary asset is absent.
+The approved brand header is the user-supplied black-and-white panoramic 357 Network artwork at `/357-network-header.jpg`.
 
-## Current stack
+## Production stack
 
 - TanStack Start + React + TypeScript
 - Supabase PostgreSQL, Auth, RLS, and private Storage
@@ -16,11 +16,11 @@ The approved brand header is the user-supplied black-and-white panoramic 357 Net
 - Vitest + ESLint + TypeScript + production-build verification in GitHub Actions
 - Node.js 22+ with pnpm 10.15.0
 
-## Current product surface
+## Product surface
 
-- Authentication and authenticated navigation
+- Authentication, account creation, and password recovery
 - Dashboard
-- Saved Jobs with ATS detection and job-description storage
+- Saved Jobs with ATS detection and full job-description storage
 - AI Preparation: fit analysis, tailored resume text, cover letters, and safe answer suggestions
 - Saved Answers
 - Applications and application-detail workflow
@@ -31,12 +31,7 @@ The approved brand header is the user-supplied black-and-white panoramic 357 Net
 
 ## ATS architecture
 
-Adapters are implemented for:
-
-- Greenhouse
-- Lever
-- Ashby
-- Workday
+Adapters are implemented for Greenhouse, Lever, Ashby, and Workday.
 
 Automation is deliberately conservative. CAPTCHA/bot checks, authentication walls, unsupported widgets, and unresolved required questions stop the workflow for user action. Sensitive answers are never guessed. A submission is not considered successful without concrete confirmation evidence.
 
@@ -52,53 +47,24 @@ Keep this `false` until controlled end-to-end testing is complete. Browser autom
 
 ## Environment
 
-Copy `.env.example` to your local environment and provide the required values there. The main production groups are:
+Copy `.env.example` to your local environment and provide the required values there. Production requires Supabase server/browser credentials, OpenAI provider configuration, Browserbase API key/project ID, and the automation submit safety switch. Do not commit secrets.
 
-- Supabase server credentials
-- Supabase browser credentials
-- OpenAI provider configuration
-- Browserbase API key and project ID
-- automation submit safety switch
+## Release gate
 
-Do not commit secrets. The Settings page reports safe readiness booleans and missing configuration names without returning secret values to the browser.
-
-## Production readiness gates
-
-Before deployment/cutover, verify all of the following:
-
-1. GitHub verification is green: TypeScript, zero-warning lint, tests, and Netlify production build.
-2. Supabase server and browser configuration are present.
-3. The production database is reachable and all critical SaaS tables are queryable.
-4. The private `candidate-documents` bucket is reachable.
-5. AI preparation is configured and tested with an authenticated user.
-6. Browserbase is configured and dry-run automation works without bypassing CAPTCHA/auth controls.
-7. Controlled ATS tests produce correct blockers and do not claim success without evidence.
-8. Only after controlled validation, explicitly enable the final-submit boundary for a verified test.
-9. Confirm verified submission receipts are created only from concrete confirmation evidence.
-10. Deploy the validated build to `357Network.ws` and re-run authenticated smoke tests.
-
-See `DEPLOYMENT_CHECKLIST.md` for the current end-to-end production rollout procedure.
-
-## Development
-
-```bash
-corepack enable
-pnpm install
-pnpm run dev
-```
-
-## Verification
+The repository release gate is:
 
 ```bash
 pnpm run verify
 ```
 
-Use the repository scripts and GitHub workflow as the release gate. A change is not considered verified until the workflow completes successfully.
+That command runs TypeScript, zero-warning ESLint, the full Vitest suite, and the production build. GitHub Actions runs the same gate on the release branch. A release is not accepted unless every step is green.
+
+The additional product-surface contract verifies that all required routes exist, unfinished-build language stays out of user-facing routes, the approved artwork/tagline remain intact, password recovery uses the shared policy, authenticated navigation remains complete, and submission-safety language stays visible.
 
 ## Deployment
 
-The rebuild targets Netlify using the TanStack Start adapter. Production environment variables must be configured in Netlify; repository examples are documentation only and must never contain real credentials.
+The application targets Netlify with the official TanStack Start adapter. `DEPLOYMENT_CHECKLIST.md` is the production cutover procedure. Production secrets must be configured in the hosting environment and must never be committed to GitHub.
 
-## Legacy code
+## Legacy material
 
-The repository contains earlier 357 Network / Job Applicant Shell code and infrastructure. The active rebuild is the `job-platform-rebuild` branch. Legacy Next.js/Freemason-job-board documentation should not be treated as the current architecture or product specification.
+Historical Next.js/Freemason-job-board files and documentation remain in repository history for auditability. The production application is the TanStack Start implementation under `src/`; TypeScript and the build include the active production surface rather than the historical `app/` implementation.
