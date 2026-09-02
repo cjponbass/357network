@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTextPdf } from "@/lib/documents/text-pdf";
+import { buildTextPdf } from "../documents/text-pdf";
 
 describe("text PDF export", () => {
   it("creates a structurally complete PDF document", () => {
