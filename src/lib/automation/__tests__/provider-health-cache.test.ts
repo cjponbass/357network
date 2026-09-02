@@ -1,23 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const verifyBrowserbaseHealth = vi.fn(async () => true);
+const verifyBrowserbaseRestHealth = vi.fn(async () => true);
 
-vi.mock("../provider/health.server", () => ({
-  verifyBrowserbaseHealth,
+vi.mock("../provider/browserbase-rest.server", () => ({
+  verifyBrowserbaseRestHealth,
 }));
 
 import { verifyBrowserProviderHealth } from "../provider/resolve.server";
 
-const KEYS = ["BROWSERBASE_API_KEY", "BROWSERBASE_PROJECT_ID"] as const;
+const KEYS = ["BROWSERBASE_API_KEY", "BROWSERBASE_PROJECT_ID", "OPENAI_API_KEY"] as const;
 const restore = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 
 function configureBrowserbase() {
   process.env["BROWSERBASE_API_KEY"] = "test-only-key";
   process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
+  process.env["OPENAI_API_KEY"] = "test-model-key";
 }
 
 afterEach(() => {
-  verifyBrowserbaseHealth.mockClear();
+  verifyBrowserbaseRestHealth.mockClear();
   for (const key of KEYS) {
     const value = restore[key];
     if (value === undefined) delete process.env[key];
@@ -33,7 +34,7 @@ describe("browser provider health caching", () => {
     await expect(verifyBrowserProviderHealth(owner)).resolves.toBe(true);
     await expect(verifyBrowserProviderHealth(owner)).resolves.toBe(true);
 
-    expect(verifyBrowserbaseHealth).toHaveBeenCalledTimes(1);
+    expect(verifyBrowserbaseRestHealth).toHaveBeenCalledTimes(1);
   });
 
   it("does not share health verification across users", async () => {
@@ -42,13 +43,10 @@ describe("browser provider health caching", () => {
     const firstOwner = { userId: `cache-user-a-${suffix}` };
     const secondOwner = { userId: `cache-user-b-${suffix}` };
 
-    // Probe different users sequentially so this test verifies cache isolation
-    // without also depending on concurrent first-time dynamic module loading.
-    // Same-user concurrency is covered independently below.
     await expect(verifyBrowserProviderHealth(firstOwner)).resolves.toBe(true);
     await expect(verifyBrowserProviderHealth(secondOwner)).resolves.toBe(true);
 
-    expect(verifyBrowserbaseHealth).toHaveBeenCalledTimes(2);
+    expect(verifyBrowserbaseRestHealth).toHaveBeenCalledTimes(2);
   });
 
   it("deduplicates concurrent health checks for the same user", async () => {
@@ -63,6 +61,6 @@ describe("browser provider health caching", () => {
       ]),
     ).resolves.toEqual([true, true, true]);
 
-    expect(verifyBrowserbaseHealth).toHaveBeenCalledTimes(1);
+    expect(verifyBrowserbaseRestHealth).toHaveBeenCalledTimes(1);
   });
 });
