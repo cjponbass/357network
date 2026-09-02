@@ -1,7 +1,4 @@
-/**
- * Server-only browser-provider resolution — the single source of truth for
- * automation availability.
- */
+/** Server-only browser-provider resolution — single source of truth for automation availability. */
 
 import type { ProviderOwner } from "./browserbase.server";
 import type { BrowserAutomationProvider } from "./contract";
@@ -12,18 +9,15 @@ const CREDENTIALS: Array<[string, string]> = [
   ["PLAYWRIGHT_SERVICE_URL", "playwright-service"],
 ];
 
-const DRIVERS: Record<
-  string,
-  ((owner: ProviderOwner) => Promise<BrowserAutomationProvider>) | undefined
-> = {
+const DRIVERS: Record<string, ((owner: ProviderOwner) => Promise<BrowserAutomationProvider>) | undefined> = {
   browserbase: async (owner) => {
-    const { createBrowserbaseProvider, browserbaseDeps } = await import("./browserbase.server");
-    return createBrowserbaseProvider(await browserbaseDeps(owner));
+    const { createBrowserbaseRestProvider } = await import("./browserbase-rest.server");
+    return createBrowserbaseRestProvider(owner);
   },
 };
 
 const DRIVER_REQUIRED_CONFIG: Record<string, string[] | undefined> = {
-  browserbase: ["BROWSERBASE_PROJECT_ID"],
+  browserbase: ["BROWSERBASE_PROJECT_ID", "OPENAI_API_KEY"],
 };
 
 const PROVIDER_CACHE = new Map<string, Promise<BrowserAutomationProvider>>();
@@ -32,13 +26,8 @@ const HEALTH_PENDING = new Map<string, Promise<boolean>>();
 const HEALTH_SUCCESS_TTL_MS = 5 * 60 * 1000;
 const HEALTH_FAILURE_TTL_MS = 30 * 1000;
 
-function hasConfiguredValue(key: string): boolean {
-  return Boolean(process.env[key]?.trim());
-}
-
-function providerCacheKey(provider: string, owner: ProviderOwner): string {
-  return `${provider}:${owner.userId}`;
-}
+function hasConfiguredValue(key: string): boolean { return Boolean(process.env[key]?.trim()); }
+function providerCacheKey(provider: string, owner: ProviderOwner): string { return `${provider}:${owner.userId}`; }
 
 export interface ProviderConfig {
   configured: boolean;
@@ -57,100 +46,49 @@ export function detectProviderConfig(): ProviderConfig {
   for (const [envVar, name] of CREDENTIALS) {
     if (hasConfiguredValue(envVar)) {
       const driverAvailable = Boolean(DRIVERS[name]);
-      const missingConfig = (DRIVER_REQUIRED_CONFIG[name] ?? []).filter(
-        (key) => !hasConfiguredValue(key),
-      );
-      return {
-        configured: true,
-        provider: name,
-        driverAvailable,
-        executable: driverAvailable && missingConfig.length === 0,
-        submitEnabled,
-        installedDrivers,
-        missingConfig,
-        healthVerified: false,
-      };
+      const missingConfig = (DRIVER_REQUIRED_CONFIG[name] ?? []).filter((key) => !hasConfiguredValue(key));
+      return { configured: true, provider: name, driverAvailable, executable: driverAvailable && missingConfig.length === 0, submitEnabled, installedDrivers, missingConfig, healthVerified: false };
     }
   }
-  return {
-    configured: false,
-    provider: null,
-    driverAvailable: false,
-    executable: false,
-    submitEnabled,
-    installedDrivers,
-    missingConfig: [],
-    healthVerified: false,
-  };
+  return { configured: false, provider: null, driverAvailable: false, executable: false, submitEnabled, installedDrivers, missingConfig: [], healthVerified: false };
 }
 
-/**
- * Verifies that the selected configured provider can establish a real browser
- * session. This check never navigates to an employer site and never submits.
- * Successful checks are cached briefly per user/provider so a Settings page
- * refresh cannot create a new paid browser session on every request. Failed
- * checks are cached only briefly, and concurrent checks share one probe.
- */
+/** Controlled connectivity check. It never navigates to an employer site or submits. */
 export async function verifyBrowserProviderHealth(owner: ProviderOwner): Promise<boolean> {
   const config = detectProviderConfig();
   if (!config.executable || !config.provider) return false;
-
   const cacheKey = providerCacheKey(config.provider, owner);
   const now = Date.now();
   const cached = HEALTH_CACHE.get(cacheKey);
   if (cached && cached.expiresAt > now) return cached.result;
   if (cached) HEALTH_CACHE.delete(cacheKey);
-
   const pending = HEALTH_PENDING.get(cacheKey);
   if (pending) return pending;
 
   const probe = (async () => {
     let result = false;
     if (config.provider === "browserbase") {
-      const { verifyBrowserbaseHealth } = await import("./health.server");
-      result = await verifyBrowserbaseHealth(owner);
+      const { verifyBrowserbaseRestHealth } = await import("./browserbase-rest.server");
+      result = await verifyBrowserbaseRestHealth();
     }
-
-    HEALTH_CACHE.set(cacheKey, {
-      result,
-      expiresAt: Date.now() + (result ? HEALTH_SUCCESS_TTL_MS : HEALTH_FAILURE_TTL_MS),
-    });
+    HEALTH_CACHE.set(cacheKey, { result, expiresAt: Date.now() + (result ? HEALTH_SUCCESS_TTL_MS : HEALTH_FAILURE_TTL_MS) });
     return result;
   })();
-
   HEALTH_PENDING.set(cacheKey, probe);
-  try {
-    return await probe;
-  } finally {
-    HEALTH_PENDING.delete(cacheKey);
-  }
+  try { return await probe; } finally { HEALTH_PENDING.delete(cacheKey); }
 }
 
-export async function resolveBrowserProvider(
-  owner: ProviderOwner,
-): Promise<BrowserAutomationProvider | null> {
+export async function resolveBrowserProvider(owner: ProviderOwner): Promise<BrowserAutomationProvider | null> {
   const config = detectProviderConfig();
   if (!config.executable || !config.provider) return null;
   const factory = DRIVERS[config.provider];
   if (!factory) return null;
-
   const cacheKey = providerCacheKey(config.provider, owner);
   const cached = PROVIDER_CACHE.get(cacheKey);
   if (cached) {
-    try {
-      return await cached;
-    } catch {
-      PROVIDER_CACHE.delete(cacheKey);
-      return null;
-    }
+    try { return await cached; } catch { PROVIDER_CACHE.delete(cacheKey); return null; }
   }
-
   const pending = factory(owner);
   PROVIDER_CACHE.set(cacheKey, pending);
-  try {
-    return await pending;
-  } catch {
-    PROVIDER_CACHE.delete(cacheKey);
-    return null;
-  }
+  try { return await pending; } catch { PROVIDER_CACHE.delete(cacheKey); return null; }
 }
