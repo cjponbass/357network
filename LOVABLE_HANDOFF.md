@@ -95,6 +95,28 @@ Connect the deployed application to the intended production Supabase project, th
 5. Keep verified-receipt immutability, submission-attempt idempotency, ownership guards and success/receipt integrity guards active.
 6. Set Supabase Auth Site URL / redirect URLs to the Lovable preview while testing, then add the final `https://357network.ws` and intended `https://www.357network.ws` production URLs before cutover. Do not remove the password-recovery callback path.
 
+### Verified state of the existing Lovable Supabase project
+
+The current Lovable project database has been inspected read-only before handoff. Its Supabase database is enabled and the core application tables already exist. The `candidate-documents` storage bucket also already exists and is **private**, so do not recreate it as a public bucket.
+
+However, its registered migration history is behind the finished GitHub release. The existing database currently records these historical migration versions:
+
+- `20260822153006`
+- `20260822153044`
+- `20260822153100`
+- `20260822160129`
+- `20260822163649`
+- `20260822165232`
+- `20260822173208`
+- `20260822173225`
+- `20260822183053`
+- `20260822183158`
+- `20260822183221`
+
+Do **not** delete or roll back those historical Lovable migrations. Instead, reconcile the database forward against the finished repository and apply the GitHub release migrations that are not already represented/effectively applied, in filename order. In particular, the hardened Aug. 25–31 migrations and the Sept. 2 migrations must be checked/applied. The current `candidate_profiles` table does **not** yet contain the new structured address/career columns, so `20260902153000_richer_candidate_profile.sql` is specifically required before the finished Profile page is exercised.
+
+After migration reconciliation, verify that these `candidate_profiles` columns exist: `address_line1`, `address_line2`, `city`, `region`, `postal_code`, `country`, `career_summary`, `experience_highlights`, `education`, `certifications`, and `languages`.
+
 If Lovable cannot perform a database/account action itself, the operator should perform that exact Supabase dashboard action and then resume the checklist. No product code rewrite is required.
 
 ## 7. External credentials/account blockers
