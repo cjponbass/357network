@@ -9,6 +9,7 @@ const requiredRoutes = [
   "src/routes/auth.tsx",
   "src/routes/reset-password.tsx",
   "src/routes/dashboard.tsx",
+  "src/routes/discover.tsx",
   "src/routes/jobs.tsx",
   "src/routes/prepare.tsx",
   "src/routes/answers.tsx",
@@ -19,31 +20,24 @@ const requiredRoutes = [
   "src/routes/settings.tsx",
 ] as const;
 
-function read(path: string): string {
-  return readFileSync(resolve(root, path), "utf8");
-}
+function read(path: string): string { return readFileSync(resolve(root, path), "utf8"); }
 
 describe("357 Network final product surface", () => {
   it("ships every required public and authenticated route", () => {
-    for (const route of requiredRoutes) {
-      expect(existsSync(resolve(root, route)), route).toBe(true);
-    }
+    for (const route of requiredRoutes) expect(existsSync(resolve(root, route)), route).toBe(true);
   });
 
   it("keeps unfinished-build language out of user-facing routes", () => {
     const banned = ["Phase 1", "PHASE 1", "skeleton", "Coming soon", "COMING SOON"];
     for (const route of requiredRoutes) {
       const source = read(route);
-      for (const phrase of banned) {
-        expect(source, `${route} contains unfinished phrase: ${phrase}`).not.toContain(phrase);
-      }
+      for (const phrase of banned) expect(source, `${route} contains unfinished phrase: ${phrase}`).not.toContain(phrase);
     }
   });
 
   it("uses the approved artwork and exact commercial tagline on the landing page", () => {
     const landing = read("src/routes/index.tsx");
     const brand = read("src/lib/brand.ts");
-
     expect(brand).toContain('headerImagePath: "/357-network-header.jpg"');
     expect(brand).toContain('tagline: "Where Opportunity Knocks for You. Automatically."');
     expect(landing).toContain("BRAND.headerImagePath");
@@ -56,7 +50,6 @@ describe("357 Network final product surface", () => {
     const auth = read("src/routes/auth.tsx");
     const reset = read("src/routes/reset-password.tsx");
     const policy = read("src/lib/auth-policy.ts");
-
     expect(policy).toContain("MIN_PASSWORD_LENGTH = 8");
     expect(auth).toContain("MIN_PASSWORD_LENGTH");
     expect(auth).toContain("validateNewPassword");
@@ -66,18 +59,17 @@ describe("357 Network final product surface", () => {
 
   it("exposes the complete authenticated workspace in navigation", () => {
     const nav = read("src/components/app-nav.tsx");
-    for (const path of [
-      "/dashboard",
-      "/jobs",
-      "/prepare",
-      "/answers",
-      "/applications",
-      "/documents",
-      "/profile",
-      "/settings",
-    ]) {
-      expect(nav).toContain(`"${path}"`);
-    }
+    for (const path of ["/dashboard", "/discover", "/jobs", "/prepare", "/answers", "/applications", "/documents", "/profile", "/settings"]) expect(nav).toContain(`"${path}"`);
+  });
+
+  it("ships job discovery and private tailored-document export", () => {
+    const discover = read("src/routes/discover.tsx");
+    const preparation = read("src/routes/prepare.tsx");
+    expect(discover).toContain("searchJobs");
+    expect(discover).toContain("Save to 357 Network");
+    expect(preparation).toContain("Save tailored resume as PDF");
+    expect(preparation).toContain("Save cover letter as PDF");
+    expect(preparation).toContain("candidate-documents").or.toContain("DOCUMENT_STORAGE_BUCKET");
   });
 
   it("keeps the verified-submission safety language visible", () => {
