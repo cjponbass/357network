@@ -26,7 +26,6 @@ describe("357 Network final product surface", () => {
   it("ships every required public and authenticated route", () => {
     for (const route of requiredRoutes) expect(existsSync(resolve(root, route)), route).toBe(true);
   });
-
   it("keeps unfinished-build language out of user-facing routes", () => {
     const banned = ["Phase 1", "PHASE 1", "skeleton", "Coming soon", "COMING SOON"];
     for (const route of requiredRoutes) {
@@ -34,7 +33,6 @@ describe("357 Network final product surface", () => {
       for (const phrase of banned) expect(source, `${route} contains unfinished phrase: ${phrase}`).not.toContain(phrase);
     }
   });
-
   it("uses the approved artwork and exact commercial tagline on the landing page", () => {
     const landing = read("src/routes/index.tsx");
     const brand = read("src/lib/brand.ts");
@@ -45,7 +43,6 @@ describe("357 Network final product surface", () => {
     expect(landing).toContain("Create account");
     expect(landing).toContain("Sign in");
   });
-
   it("keeps authentication and recovery on the shared password policy", () => {
     const auth = read("src/routes/auth.tsx");
     const reset = read("src/routes/reset-password.tsx");
@@ -56,12 +53,10 @@ describe("357 Network final product surface", () => {
     expect(reset).toContain("MIN_PASSWORD_LENGTH");
     expect(reset).toContain("validatePasswordConfirmation");
   });
-
   it("exposes the complete authenticated workspace in navigation", () => {
     const nav = read("src/components/app-nav.tsx");
     for (const path of ["/dashboard", "/discover", "/jobs", "/prepare", "/answers", "/applications", "/documents", "/profile", "/settings"]) expect(nav).toContain(`"${path}"`);
   });
-
   it("ships job discovery and private tailored-document export", () => {
     const discover = read("src/routes/discover.tsx");
     const preparation = read("src/routes/prepare.tsx");
@@ -69,9 +64,8 @@ describe("357 Network final product surface", () => {
     expect(discover).toContain("Save to 357 Network");
     expect(preparation).toContain("Save tailored resume as PDF");
     expect(preparation).toContain("Save cover letter as PDF");
-    expect(preparation).toContain("candidate-documents").or.toContain("DOCUMENT_STORAGE_BUCKET");
+    expect(preparation.includes("DOCUMENT_STORAGE_BUCKET") || preparation.includes("candidate-documents")).toBe(true);
   });
-
   it("keeps the verified-submission safety language visible", () => {
     const detail = read("src/routes/applications_.$applicationId.tsx");
     expect(detail).toContain("A receipt is created only after concrete confirmation evidence is verified.");
