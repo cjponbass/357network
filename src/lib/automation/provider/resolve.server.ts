@@ -16,10 +16,6 @@ const DRIVERS: Record<string, ((owner: ProviderOwner) => Promise<BrowserAutomati
   },
 };
 
-const DRIVER_REQUIRED_CONFIG: Record<string, string[] | undefined> = {
-  browserbase: ["BROWSERBASE_PROJECT_ID", "OPENAI_API_KEY"],
-};
-
 const PROVIDER_CACHE = new Map<string, Promise<BrowserAutomationProvider>>();
 const HEALTH_CACHE = new Map<string, { result: boolean; expiresAt: number }>();
 const HEALTH_PENDING = new Map<string, Promise<boolean>>();
@@ -28,6 +24,18 @@ const HEALTH_FAILURE_TTL_MS = 30 * 1000;
 
 function hasConfiguredValue(key: string): boolean { return Boolean(process.env[key]?.trim()); }
 function providerCacheKey(provider: string, owner: ProviderOwner): string { return `${provider}:${owner.userId}`; }
+
+function missingProviderConfig(provider: string): string[] {
+  if (provider !== "browserbase") return [];
+  const missing: string[] = [];
+  // Current Stagehand API accepts a project-scoped Browserbase API key; project ID is optional.
+  // It requires a model-provider key. 357 Network accepts either the normal OpenAI key used by
+  // AI preparation or a dedicated MODEL_API_KEY for browser automation.
+  if (!hasConfiguredValue("OPENAI_API_KEY") && !hasConfiguredValue("MODEL_API_KEY")) {
+    missing.push("OPENAI_API_KEY or MODEL_API_KEY");
+  }
+  return missing;
+}
 
 export interface ProviderConfig {
   configured: boolean;
@@ -46,7 +54,7 @@ export function detectProviderConfig(): ProviderConfig {
   for (const [envVar, name] of CREDENTIALS) {
     if (hasConfiguredValue(envVar)) {
       const driverAvailable = Boolean(DRIVERS[name]);
-      const missingConfig = (DRIVER_REQUIRED_CONFIG[name] ?? []).filter((key) => !hasConfiguredValue(key));
+      const missingConfig = missingProviderConfig(name);
       return { configured: true, provider: name, driverAvailable, executable: driverAvailable && missingConfig.length === 0, submitEnabled, installedDrivers, missingConfig, healthVerified: false };
     }
   }
