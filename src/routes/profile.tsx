@@ -2,9 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import type { CandidateProfileUpdate } from "@/lib/domain-types";
 
 export const Route = createFileRoute("/profile")({ component: ProfilePage });
+
+type ExtendedProfile = {
+  full_name: string; headline: string | null; email: string | null; phone: string | null; location: string | null;
+  address_line1: string | null; address_line2: string | null; city: string | null; region: string | null; postal_code: string | null; country: string | null;
+  years_experience: number | null; skills: string[]; work_authorization: string | null;
+  career_summary: string | null; experience_highlights: string | null; education: string | null; certifications: string | null; languages: string | null;
+  linkedin_url: string | null; github_url: string | null; website_url: string | null;
+};
 
 type FormState = {
   full_name: string; headline: string; email: string; phone: string; location: string;
@@ -35,12 +42,13 @@ function ProfilePage() {
     const { data, error: loadError } = await supabase.from("candidate_profiles").select("*").eq("user_id", user.id).maybeSingle();
     if (loadError) { setError(loadError.message); return; }
     if (!data) return;
+    const p = data as unknown as ExtendedProfile;
     setForm({
-      full_name: data.full_name ?? "", headline: data.headline ?? "", email: data.email ?? "", phone: data.phone ?? "", location: data.location ?? "",
-      address_line1: data.address_line1 ?? "", address_line2: data.address_line2 ?? "", city: data.city ?? "", region: data.region ?? "", postal_code: data.postal_code ?? "", country: data.country ?? "",
-      years_experience: data.years_experience == null ? "" : String(data.years_experience), skills: (data.skills ?? []).join(", "), work_authorization: data.work_authorization ?? "",
-      career_summary: data.career_summary ?? "", experience_highlights: (data.experience_highlights ?? []).join("\n"), education: (data.education ?? []).join("\n"), certifications: (data.certifications ?? []).join("\n"), languages: (data.languages ?? []).join(", "),
-      linkedin_url: data.linkedin_url ?? "", github_url: data.github_url ?? "", website_url: data.website_url ?? "",
+      full_name: p.full_name ?? "", headline: p.headline ?? "", email: p.email ?? "", phone: p.phone ?? "", location: p.location ?? "",
+      address_line1: p.address_line1 ?? "", address_line2: p.address_line2 ?? "", city: p.city ?? "", region: p.region ?? "", postal_code: p.postal_code ?? "", country: p.country ?? "",
+      years_experience: p.years_experience == null ? "" : String(p.years_experience), skills: (p.skills ?? []).join(", "), work_authorization: p.work_authorization ?? "",
+      career_summary: p.career_summary ?? "", experience_highlights: p.experience_highlights ?? "", education: p.education ?? "", certifications: p.certifications ?? "", languages: p.languages ?? "",
+      linkedin_url: p.linkedin_url ?? "", github_url: p.github_url ?? "", website_url: p.website_url ?? "",
     });
   }, [user]);
   useEffect(() => { void load(); }, [load]);
@@ -49,14 +57,15 @@ function ProfilePage() {
     event.preventDefault(); if (!user) return; setBusy(true); setMessage(null); setError(null);
     const years = form.years_experience.trim(); const yearsExperience = years ? Number(years) : null;
     if (yearsExperience !== null && (!Number.isFinite(yearsExperience) || yearsExperience < 0)) { setError("Years of experience must be a non-negative number."); setBusy(false); return; }
-    const values: CandidateProfileUpdate = {
+    const values = {
+      user_id: user.id,
       full_name: form.full_name.trim(), headline: nullable(form.headline), email: nullable(form.email), phone: nullable(form.phone), location: nullable(form.location),
       address_line1: nullable(form.address_line1), address_line2: nullable(form.address_line2), city: nullable(form.city), region: nullable(form.region), postal_code: nullable(form.postal_code), country: nullable(form.country),
       years_experience: yearsExperience, skills: csv(form.skills), work_authorization: nullable(form.work_authorization), career_summary: nullable(form.career_summary),
-      experience_highlights: lines(form.experience_highlights), education: lines(form.education), certifications: lines(form.certifications), languages: csv(form.languages),
+      experience_highlights: nullable(form.experience_highlights), education: nullable(form.education), certifications: nullable(form.certifications), languages: nullable(form.languages),
       linkedin_url: nullable(form.linkedin_url), github_url: nullable(form.github_url), website_url: nullable(form.website_url),
     };
-    const { error: saveError } = await supabase.from("candidate_profiles").upsert({ user_id: user.id, ...values }, { onConflict: "user_id" });
+    const { error: saveError } = await supabase.from("candidate_profiles").upsert(values as never, { onConflict: "user_id" });
     if (saveError) setError(saveError.message); else setMessage("Profile saved. These facts are now available for tailoring and supported application forms."); setBusy(false);
   }
 
@@ -72,7 +81,7 @@ function ProfilePage() {
         <Field id="city" label="City" value={form.city} set={setField} /><Field id="region" label="State / province / region" value={form.region} set={setField} /><Field id="postal_code" label="ZIP / postal code" value={form.postal_code} set={setField} /><Field id="country" label="Country" value={form.country} set={setField} />
       </div>
       <h2 style={sectionHeading}>Career facts</h2><div style={gridStyle}>
-        <Field id="years_experience" label="Years of experience" type="number" value={form.years_experience} set={setField} /><Field id="skills" label="Skills (comma separated)" value={form.skills} set={setField} /><Field id="languages" label="Languages (comma separated)" value={form.languages} set={setField} /><Field id="work_authorization" label="Work authorization" value={form.work_authorization} set={setField} />
+        <Field id="years_experience" label="Years of experience" type="number" value={form.years_experience} set={setField} /><Field id="skills" label="Skills (comma separated)" value={form.skills} set={setField} /><Field id="languages" label="Languages" value={form.languages} set={setField} /><Field id="work_authorization" label="Work authorization" value={form.work_authorization} set={setField} />
       </div>
       <Area id="career_summary" label="Career summary" value={form.career_summary} set={setField} hint="A factual overview of your background. This can ground resume and cover-letter tailoring." />
       <Area id="experience_highlights" label="Experience highlights — one per line" value={form.experience_highlights} set={setField} /><Area id="education" label="Education — one entry per line" value={form.education} set={setField} /><Area id="certifications" label="Certifications — one per line" value={form.certifications} set={setField} />
@@ -83,7 +92,6 @@ function ProfilePage() {
 }
 function nullable(value: string) { const v = value.trim(); return v ? v : null; }
 function csv(value: string) { return value.split(",").map((v) => v.trim()).filter(Boolean); }
-function lines(value: string) { return value.split(/\r?\n/).map((v) => v.trim()).filter(Boolean); }
 function Field({ id, label, value, type = "text", set }: { id: keyof FormState; label: string; value: string; type?: string; set: (id: keyof FormState, value: string) => void }) { return <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span><input id={id} type={type} value={value} onChange={(e) => set(id, e.target.value)} style={inputStyle} /></label>; }
 function Area({ id, label, value, set, hint }: { id: keyof FormState; label: string; value: string; set: (id: keyof FormState, value: string) => void; hint?: string }) { return <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>{hint ? <span style={{ fontSize: 13, color: "#6b7280" }}>{hint}</span> : null}<textarea id={id} value={value} onChange={(e) => set(id, e.target.value)} rows={4} style={{ ...inputStyle, resize: "vertical" }} /></label>; }
 function Nav() { return <nav style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 28 }}><a href="/dashboard" style={navLink}>Dashboard</a><a href="/discover" style={navLink}>Discover</a><a href="/jobs" style={navLink}>Jobs</a><a href="/applications" style={navLink}>Applications</a><a href="/documents" style={navLink}>Documents</a><a href="/settings" style={navLink}>Settings</a></nav>; }
