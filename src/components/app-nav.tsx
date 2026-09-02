@@ -5,7 +5,8 @@ import { BRAND } from "@/lib/brand";
 
 const links = [
   ["Dashboard", "/dashboard"],
-  ["Jobs", "/jobs"],
+  ["Discover", "/discover"],
+  ["Saved Jobs", "/jobs"],
   ["AI Preparation", "/prepare"],
   ["Saved Answers", "/answers"],
   ["Applications", "/applications"],
@@ -81,7 +82,7 @@ const brandLink: React.CSSProperties = {
 
 const brandName: React.CSSProperties = { display: "block", fontWeight: 850, lineHeight: 1.05, letterSpacing: "-.02em" };
 const tagline: React.CSSProperties = { display: "block", fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "nowrap" };
-const navStyle: React.CSSProperties = { display: "flex", gap: 5, flexWrap: "wrap", flex: "1 1 620px", minWidth: 0 };
+const navStyle: React.CSSProperties = { display: "flex", gap: 5, flexWrap: "wrap", flex: "1 1 680px", minWidth: 0 };
 const navItem: React.CSSProperties = {
   padding: "7px 9px",
   borderRadius: 8,
