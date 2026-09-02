@@ -19,6 +19,12 @@ const candidate: CandidateContext = {
     mimeType: "application/pdf",
     sizeBytes: 12345,
   },
+  coverLetterDocument: {
+    id: "doc-cover-1",
+    fileName: "ada-cover-letter.pdf",
+    mimeType: "application/pdf",
+    sizeBytes: 4567,
+  },
   coverLetterText: "Dear team, I would love to build analytical engines with you.",
   savedAnswers: [],
 };
@@ -47,6 +53,19 @@ describe("Greenhouse ATS adapter", () => {
     expect(inputs.find((input) => input.key === "cover_letter")?.value).toEqual({
       type: "text",
       text: candidate.coverLetterText,
+    });
+  });
+
+  it("uses the selected private cover-letter document when the live ATS requests a file", () => {
+    const mapped = greenhouseAdapter.mapFacts([
+      { key: "cover_letter", label: "Cover letter", required: true, sensitive: false, kind: "file" },
+    ], candidate);
+    expect(buildFillInputs(mapped)[0]?.value).toEqual({
+      type: "private_file",
+      documentId: "doc-cover-1",
+      fileName: "ada-cover-letter.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 4567,
     });
   });
 
