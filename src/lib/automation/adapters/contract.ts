@@ -4,6 +4,13 @@
 
 import type { AtsFormField, AtsProvider, ResolvedField } from "../types";
 
+export interface CandidateDocumentFact {
+  id: string;
+  fileName: string;
+  mimeType: string | null;
+  sizeBytes: number | null;
+}
+
 export interface CandidateContext {
   fullName: string | null;
   email: string | null;
@@ -12,12 +19,9 @@ export interface CandidateContext {
   linkedinUrl: string | null;
   githubUrl: string | null;
   websiteUrl: string | null;
-  resumeDocument: {
-    id: string;
-    fileName: string;
-    mimeType: string | null;
-    sizeBytes: number | null;
-  } | null;
+  resumeDocument: CandidateDocumentFact | null;
+  /** Selected application cover-letter file. Optional for backward-compatible adapter tests/callers. */
+  coverLetterDocument?: CandidateDocumentFact | null;
   coverLetterText: string | null;
   savedAnswers: Array<{ question: string; answer: string }>;
 }
