@@ -49,11 +49,17 @@ describe("ATS URL detection", () => {
   });
 
   it.each([
+    "http://jobs.lever.co/acme/123",
+    "http://boards.greenhouse.io/acme/jobs/123",
+    "http://jobs.ashbyhq.com/acme/123",
+    "http://acme.wd1.myworkdayjobs.com/en-US/jobs/job/123",
     "ftp://jobs.lever.co/acme/123",
     "file://boards.greenhouse.io/acme/jobs/123",
     "javascript://jobs.ashbyhq.com/acme/123",
-  ])("rejects non-HTTP(S) ATS-looking URLs: %s", (url) => {
-    expect(detectAts(url).provider).toBe("unknown");
+  ])("rejects non-HTTPS ATS-looking URLs: %s", (url) => {
+    const detection = detectAts(url);
+    expect(detection.provider).toBe("unknown");
+    expect(detection.host).toBeNull();
   });
 
   it.each([
