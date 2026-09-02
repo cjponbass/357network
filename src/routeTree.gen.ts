@@ -6,6 +6,7 @@ import { Route as IndexRouteImport } from "./routes/index";
 import { Route as AuthRouteImport } from "./routes/auth";
 import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
 import { Route as DashboardRouteImport } from "./routes/dashboard";
+import { Route as DiscoverRouteImport } from "./routes/discover";
 import { Route as JobsRouteImport } from "./routes/jobs";
 import { Route as ApplicationsRouteImport } from "./routes/applications";
 import { Route as ApplicationDetailRouteImport } from "./routes/applications_.$applicationId";
@@ -19,6 +20,7 @@ const IndexRoute = IndexRouteImport.update({ id: "/", path: "/", getParentRoute:
 const AuthRoute = AuthRouteImport.update({ id: "/auth", path: "/auth", getParentRoute: () => rootRouteImport } as any);
 const ResetPasswordRoute = ResetPasswordRouteImport.update({ id: "/reset-password", path: "/reset-password", getParentRoute: () => rootRouteImport } as any);
 const DashboardRoute = DashboardRouteImport.update({ id: "/dashboard", path: "/dashboard", getParentRoute: () => rootRouteImport } as any);
+const DiscoverRoute = DiscoverRouteImport.update({ id: "/discover", path: "/discover", getParentRoute: () => rootRouteImport } as any);
 const JobsRoute = JobsRouteImport.update({ id: "/jobs", path: "/jobs", getParentRoute: () => rootRouteImport } as any);
 const ApplicationsRoute = ApplicationsRouteImport.update({ id: "/applications", path: "/applications", getParentRoute: () => rootRouteImport } as any);
 const ApplicationDetailRoute = ApplicationDetailRouteImport.update({ id: "/applications_/$applicationId", path: "/applications/$applicationId", getParentRoute: () => rootRouteImport } as any);
@@ -33,6 +35,7 @@ export interface FileRoutesByFullPath {
   "/auth": typeof AuthRoute;
   "/reset-password": typeof ResetPasswordRoute;
   "/dashboard": typeof DashboardRoute;
+  "/discover": typeof DiscoverRoute;
   "/jobs": typeof JobsRoute;
   "/applications": typeof ApplicationsRoute;
   "/applications/$applicationId": typeof ApplicationDetailRoute;
@@ -49,6 +52,7 @@ export interface FileRoutesById {
   "/auth": typeof AuthRoute;
   "/reset-password": typeof ResetPasswordRoute;
   "/dashboard": typeof DashboardRoute;
+  "/discover": typeof DiscoverRoute;
   "/jobs": typeof JobsRoute;
   "/applications": typeof ApplicationsRoute;
   "/applications_/$applicationId": typeof ApplicationDetailRoute;
@@ -60,10 +64,10 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/auth" | "/reset-password" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
+  fullPaths: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth" | "/reset-password" | "/dashboard" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
-  id: "__root__" | "/" | "/auth" | "/reset-password" | "/dashboard" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
+  to: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
+  id: "__root__" | "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers";
   fileRoutesById: FileRoutesById;
 }
 
@@ -73,6 +77,7 @@ declare module "@tanstack/react-router" {
     "/auth": { id: "/auth"; path: "/auth"; fullPath: "/auth"; preLoaderRoute: typeof AuthRouteImport; parentRoute: typeof rootRouteImport };
     "/reset-password": { id: "/reset-password"; path: "/reset-password"; fullPath: "/reset-password"; preLoaderRoute: typeof ResetPasswordRouteImport; parentRoute: typeof rootRouteImport };
     "/dashboard": { id: "/dashboard"; path: "/dashboard"; fullPath: "/dashboard"; preLoaderRoute: typeof DashboardRouteImport; parentRoute: typeof rootRouteImport };
+    "/discover": { id: "/discover"; path: "/discover"; fullPath: "/discover"; preLoaderRoute: typeof DiscoverRouteImport; parentRoute: typeof rootRouteImport };
     "/jobs": { id: "/jobs"; path: "/jobs"; fullPath: "/jobs"; preLoaderRoute: typeof JobsRouteImport; parentRoute: typeof rootRouteImport };
     "/applications": { id: "/applications"; path: "/applications"; fullPath: "/applications"; preLoaderRoute: typeof ApplicationsRouteImport; parentRoute: typeof rootRouteImport };
     "/applications_/$applicationId": { id: "/applications_/$applicationId"; path: "/applications/$applicationId"; fullPath: "/applications/$applicationId"; preLoaderRoute: typeof ApplicationDetailRouteImport; parentRoute: typeof rootRouteImport };
@@ -84,7 +89,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootRouteChildren = { IndexRoute, AuthRoute, ResetPasswordRoute, DashboardRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute, AnswersRoute };
+const rootRouteChildren = { IndexRoute, AuthRoute, ResetPasswordRoute, DashboardRoute, DiscoverRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute, AnswersRoute };
 
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
