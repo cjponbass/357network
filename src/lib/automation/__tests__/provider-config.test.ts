@@ -21,7 +21,6 @@ function clearAutomationEnv() {
 
 function configureExecutableBrowserbase() {
   process.env["BROWSERBASE_API_KEY"] = "test-only-key";
-  process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
   process.env["OPENAI_API_KEY"] = "test-model-key";
 }
 
@@ -44,16 +43,30 @@ describe("browser provider configuration", () => {
     expect(config.healthVerified).toBe(false);
   });
 
-  it("does not become executable with incomplete Stagehand credentials", async () => {
+  it("does not become executable without a model-provider key", async () => {
     clearAutomationEnv();
     process.env["BROWSERBASE_API_KEY"] = "test-only-key";
     const config = detectProviderConfig();
     expect(config.configured).toBe(true);
     expect(config.driverAvailable).toBe(true);
-    expect(config.missingConfig).toContain("BROWSERBASE_PROJECT_ID");
-    expect(config.missingConfig).toContain("OPENAI_API_KEY");
+    expect(config.missingConfig).toContain("OPENAI_API_KEY or MODEL_API_KEY");
     expect(config.executable).toBe(false);
     await expect(resolveBrowserProvider({ userId: "test-user" })).resolves.toBeNull();
+  });
+
+  it("accepts a project-scoped Browserbase key without a separate project id", () => {
+    clearAutomationEnv();
+    configureExecutableBrowserbase();
+    const config = detectProviderConfig();
+    expect(config.executable).toBe(true);
+    expect(config.missingConfig).toEqual([]);
+  });
+
+  it("accepts a dedicated MODEL_API_KEY instead of the OpenAI preparation key", () => {
+    clearAutomationEnv();
+    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
+    process.env["MODEL_API_KEY"] = "test-model-key";
+    expect(detectProviderConfig().executable).toBe(true);
   });
 
   it("rejects whitespace-only legacy Browserbase credentials at runtime", async () => {
