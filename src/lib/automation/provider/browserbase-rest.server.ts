@@ -8,6 +8,7 @@ type PublicField = ProviderInspectResult["fields"][number];
 type InspectionField = PublicField & { selector: string };
 type Config = { apiKey: string; projectId: string | null; modelApiKey: string; modelName: string; submitEnabled: boolean };
 type SessionState = { pageUrl: string; submitted: boolean; fields: InspectionField[] };
+type ExtractEnvelope<T> = { result?: T };
 const STAGEHAND = "https://api.stagehand.browserbase.com/v1";
 const BROWSERBASE = "https://api.browserbase.com/v1";
 
@@ -43,7 +44,8 @@ export function createBrowserbaseRestProvider(owner: ProviderOwner, config = rea
     },
     async inspect(session) {
       const current = state(session);
-      const result = await request<{ formFound?: boolean; captcha?: boolean; authWall?: boolean; fields?: Array<{ key?: string; label?: string; selector?: string; required?: boolean; sensitive?: boolean; kind?: string }> }>(config, `/sessions/${encodeURIComponent(session.sessionId)}/extract`, { instruction: "Inspect only the visible job application. Return stable selector, label, required, kind for every form control; report captcha and authentication walls. Do not interact.", schema: INSPECTION_SCHEMA });
+      const payload = await request<ExtractEnvelope<{ formFound?: boolean; captcha?: boolean; authWall?: boolean; fields?: Array<{ key?: string; label?: string; selector?: string; required?: boolean; sensitive?: boolean; kind?: string }> }>>(config, `/sessions/${encodeURIComponent(session.sessionId)}/extract`, { instruction: "Inspect only the visible job application. Return stable selector, label, required, kind for every form control; report captcha and authentication walls. Do not interact.", schema: INSPECTION_SCHEMA });
+      const result = payload.result ?? {};
       const blockers: ProviderBlocker[] = [];
       if (result.captcha) blockers.push(block("captcha_or_bot_check", "CAPTCHA or bot protection requires manual action."));
       if (result.authWall) blockers.push(block("authentication_required", "Employer authentication requires manual action."));
@@ -67,14 +69,16 @@ export function createBrowserbaseRestProvider(owner: ProviderOwner, config = rea
     async submit(session): Promise<ProviderSubmitResult> {
       const current = state(session);
       if (!config.submitEnabled) return { submitted: false, blockers: [block("provider_unavailable", "Final submit is disabled. No application was sent.")] };
-      const observed = await request<Array<{ selector?: string; description?: string; method?: string; arguments?: string[] }>>(config, `/sessions/${encodeURIComponent(session.sessionId)}/observe`, { instruction: "Identify only the single final control that submits this job application to the employer. Do not click it." });
+      const payload = await request<ExtractEnvelope<Array<{ selector?: string; description?: string; method?: string; arguments?: string[] }>>>(config, `/sessions/${encodeURIComponent(session.sessionId)}/observe`, { instruction: "Identify only the single final control that submits this job application to the employer. Do not click it." });
+      const observed = payload.result ?? [];
       const candidates = observed.filter((item) => item.selector && (!item.method || item.method === "click") && /submit|apply|send|complete/i.test(item.description ?? ""));
       if (candidates.length !== 1 || !candidates[0]?.selector) return { submitted: false, blockers: [block("unsupported_widget", "Final submit control was not unambiguously identified.")] };
       await act(config, session.sessionId, candidates[0].selector, "click", []); current.submitted = true; return { submitted: true, blockers: [] };
     },
     async verify(session): Promise<ProviderVerifyResult> {
       const current = state(session); if (!current.submitted) return { verified: false, confirmationText: null, confirmationUrl: null, blockers: [block("verification_failed", "Nothing was submitted.")] };
-      const result = await request<{ visibleText?: string; currentUrl?: string }>(config, `/sessions/${encodeURIComponent(session.sessionId)}/extract`, { instruction: "Return visible page text verbatim and current URL after submission. Do not infer confirmation.", schema: VERIFY_SCHEMA });
+      const payload = await request<ExtractEnvelope<{ visibleText?: string; currentUrl?: string }>>(config, `/sessions/${encodeURIComponent(session.sessionId)}/extract`, { instruction: "Return visible page text verbatim and current URL after submission. Do not infer confirmation.", schema: VERIFY_SCHEMA });
+      const result = payload.result ?? {};
       const url = result.currentUrl?.trim() || current.pageUrl; current.pageUrl = url; const confirmation = findConfirmation(result.visibleText ?? "", url);
       return confirmation ? { verified: true, confirmationText: confirmation, confirmationUrl: url, blockers: [] } : { verified: false, confirmationText: null, confirmationUrl: null, blockers: [block("verification_failed", "No concrete submission confirmation was found.")] };
     },
