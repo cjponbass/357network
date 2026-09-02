@@ -4,7 +4,7 @@
  */
 
 import type { AtsFormField, ResolvedField } from "../types";
-import type { AdapterInspectResult, AtsAdapter, CandidateContext } from "./contract";
+import type { AdapterInspectResult, AtsAdapter, CandidateContext, CandidateDocumentFact } from "./contract";
 
 const ASHBY_FIELDS: AtsFormField[] = [
   { key: "full_name", label: "Full name", required: true, sensitive: false, kind: "text" },
@@ -40,6 +40,22 @@ function fromText(
     : { ...field, value: null, fill: null, source: "unresolved" };
 }
 
+function fromDocument(field: AtsFormField, document: CandidateDocumentFact | null | undefined): ResolvedField {
+  if (!document) return { ...field, value: null, fill: null, source: "unresolved" };
+  return {
+    ...field,
+    value: document.fileName,
+    fill: {
+      type: "private_file",
+      documentId: document.id,
+      fileName: document.fileName,
+      mimeType: document.mimeType,
+      sizeBytes: document.sizeBytes,
+    },
+    source: "document",
+  };
+}
+
 export const ashbyAdapter: AtsAdapter = {
   provider: "ashby",
   displayName: "Ashby",
@@ -71,24 +87,11 @@ export const ashbyAdapter: AtsAdapter = {
           return fromText(field, candidate.phone, "profile");
         case "location":
           return fromText(field, candidate.location, "profile");
-        case "resume": {
-          const document = candidate.resumeDocument;
-          if (!document) return { ...field, value: null, fill: null, source: "unresolved" };
-          return {
-            ...field,
-            value: document.fileName,
-            fill: {
-              type: "private_file",
-              documentId: document.id,
-              fileName: document.fileName,
-              mimeType: document.mimeType,
-              sizeBytes: document.sizeBytes,
-            },
-            source: "document",
-          };
-        }
+        case "resume":
+          return fromDocument(field, candidate.resumeDocument);
         case "cover_letter":
         case "additional_information": {
+          if (field.kind === "file") return fromDocument(field, candidate.coverLetterDocument);
           const letter = candidate.coverLetterText?.trim() ?? "";
           if (letter === "") return { ...field, value: null, fill: null, source: "unresolved" };
           return {
