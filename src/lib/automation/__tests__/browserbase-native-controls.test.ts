@@ -2,9 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { fillNativeField, type PageLike } from "../provider/browserbase.server";
 
 function page(overrides: Partial<PageLike> = {}): PageLike {
+  const evaluate: PageLike["evaluate"] = async <T = unknown>() => undefined as T;
   return {
     goto: vi.fn(async () => undefined),
-    evaluate: vi.fn(async () => undefined),
+    evaluate,
     fill: vi.fn(async () => undefined),
     setInputFiles: vi.fn(async () => undefined),
     click: vi.fn(async () => undefined),
