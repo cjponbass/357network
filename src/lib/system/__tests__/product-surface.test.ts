@@ -66,9 +66,43 @@ describe("357 Network final product surface", () => {
     expect(preparation).toContain("Save cover letter as PDF");
     expect(preparation.includes("DOCUMENT_STORAGE_BUCKET") || preparation.includes("candidate-documents")).toBe(true);
   });
+  it("ships the richer private profile schema and live-form facts", () => {
+    const migrationPath = "supabase/migrations/20260902153000_richer_candidate_profile.sql";
+    expect(existsSync(resolve(root, migrationPath))).toBe(true);
+    const migration = read(migrationPath);
+    const profile = read("src/routes/profile.tsx");
+    const facts = read("src/lib/ai/facts.server.ts");
+    for (const column of ["address_line1", "city", "region", "postal_code", "country", "career_summary", "experience_highlights", "education", "certifications", "languages"]) {
+      expect(migration).toContain(column);
+      expect(profile).toContain(column);
+    }
+    expect(profile).toContain("profile_sync");
+    expect(facts).toContain("Career summary");
+    expect(facts).toContain("Never fabricate experience");
+  });
+  it("uses the Cloudflare-compatible Browserbase Stagehand REST execution path", () => {
+    const provider = read("src/lib/automation/provider/browserbase-rest.server.ts");
+    const resolver = read("src/lib/automation/provider/resolve.server.ts");
+    expect(provider).toContain("api.stagehand.browserbase.com/v1");
+    expect(provider).toContain("canonicalKey");
+    expect(provider).toContain("AUTOMATION_ENABLE_SUBMIT");
+    expect(provider).toContain("/uploads");
+    expect(resolver).toContain("createBrowserbaseRestProvider");
+  });
   it("keeps the verified-submission safety language visible", () => {
     const detail = read("src/routes/applications_.$applicationId.tsx");
     expect(detail).toContain("A receipt is created only after concrete confirmation evidence is verified.");
     expect(detail).toContain("CAPTCHA, login walls and unresolved required questions stop the run.");
+  });
+  it("ships a bounded Lovable deployment handoff instead of delegating product development", () => {
+    const handoff = read("LOVABLE_HANDOFF.md");
+    expect(handoff).toContain("deployment-only handoff");
+    expect(handoff).toContain("exact green release tree");
+    expect(handoff).toContain("20260902153000_richer_candidate_profile.sql");
+    expect(handoff).toContain("VITE_SUPABASE_URL");
+    expect(handoff).toContain("BROWSERBASE_API_KEY");
+    expect(handoff).toContain("AUTOMATION_ENABLE_SUBMIT=false");
+    expect(handoff).toContain("357Network.ws");
+    expect(handoff).toContain("What Lovable is NOT being asked to do");
   });
 });
