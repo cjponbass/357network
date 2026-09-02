@@ -13,6 +13,7 @@
  *    (AUTOMATION_ENABLE_SUBMIT) and is disabled by default.
  */
 
+import { detectAts } from "../ats-detect";
 import {
   EXTRACT_FIELDS_SCRIPT,
   findConfirmation,
@@ -83,6 +84,12 @@ function blocker(kind: ProviderBlocker["kind"], message: string, fieldKey?: stri
   return fieldKey ? { kind, message, fieldKey } : { kind, message };
 }
 
+export function isTrustedAtsNavigation(targetUrl: string, finalUrl: string): boolean {
+  const target = detectAts(targetUrl);
+  const final = detectAts(finalUrl);
+  return target.provider !== "unknown" && final.provider === target.provider;
+}
+
 export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomationProvider {
   const sessions = new Map<string, SessionState>();
   const state = (session: ProviderSession): SessionState => {
@@ -112,6 +119,12 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
         await deps.releaseSession(remote.id).catch(() => undefined);
         throw new Error("Navigation to the application page failed.");
       }
+      const finalUrl = connected.page.url();
+      if (!isTrustedAtsNavigation(targetUrl, finalUrl)) {
+        await connected.browser.close().catch(() => undefined);
+        await deps.releaseSession(remote.id).catch(() => undefined);
+        throw new Error("Navigation left the trusted ATS provider. Candidate data was not entered.");
+      }
       sessions.set(remote.id, {
         bbSessionId: remote.id,
         browser: connected.browser,
@@ -119,7 +132,7 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
         fields: [],
         submitted: false,
       });
-      return { sessionId: remote.id, pageUrl: connected.page.url() };
+      return { sessionId: remote.id, pageUrl: finalUrl };
     },
 
     async inspect(session: ProviderSession): Promise<ProviderInspectResult> {
