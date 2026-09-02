@@ -2,6 +2,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 type Client = SupabaseClient<Database>;
+type ExtendedProfile = Database["public"]["Tables"]["candidate_profiles"]["Row"] & {
+  address_line1: string | null; address_line2: string | null; city: string | null; region: string | null; postal_code: string | null; country: string | null;
+  career_summary: string | null; experience_highlights: string | null; education: string | null; certifications: string | null; languages: string | null;
+};
 export interface JobFacts { id:string; title:string; company:string; location:string|null; work_arrangement:string|null; employment_type:string|null; salary_min:number|null; salary_max:number|null; currency:string|null; ats_name:string|null; source_url:string|null; description:string|null; }
 export interface CandidateFactBundle { factsBlock:string; savedAnswersBlock:string; job:JobFacts; jobBlock:string; }
 function line(label:string,value:unknown):string|null { if(value===null||value===undefined)return null; if(Array.isArray(value)){if(!value.length)return null;return `${label}: ${value.join(" | ")}`;} const text=String(value).trim(); return text===""?null:`${label}: ${text}`; }
@@ -13,7 +17,8 @@ export async function loadFacts(supabase:Client,userId:string,jobId:string):Prom
     supabase.from("saved_answers").select("question, answer, tags").eq("user_id",userId),
   ]);
   if(jobRes.error)throw new Error(jobRes.error.message); if(!jobRes.data)throw new Error("Job not found.");
-  const job=jobRes.data as JobFacts; const p=profileRes.data; const prefs=prefsRes.data; const answers=answersRes.data??[];
+  if(profileRes.error)throw new Error(profileRes.error.message); if(prefsRes.error)throw new Error(prefsRes.error.message); if(answersRes.error)throw new Error(answersRes.error.message);
+  const job=jobRes.data as JobFacts; const p=profileRes.data as ExtendedProfile|null; const prefs=prefsRes.data; const answers=answersRes.data??[];
   const factLines=[
     line("Full name",p?.full_name),line("Headline",p?.headline),line("Contact email",p?.email),line("Phone",p?.phone),line("Location summary",p?.location),
     line("Street address",p?.address_line1),line("Address line 2",p?.address_line2),line("City",p?.city),line("State/province/region",p?.region),line("Postal code",p?.postal_code),line("Country",p?.country),
