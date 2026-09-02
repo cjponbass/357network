@@ -2,9 +2,9 @@ name: Verify Job Platform
 
 on:
   push:
-    branches: [job-platform-rebuild]
+    branches: [job-platform-rebuild, feature/live-supabase-integration]
   pull_request:
-    branches: [job-platform-rebuild]
+    branches: [job-platform-rebuild, feature/live-supabase-integration]
 
 permissions:
   contents: read
