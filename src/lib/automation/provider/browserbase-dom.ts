@@ -1,4 +1,4 @@
-/** Pure DOM helpers for the Browserbase driver; testable without a live browser. */
+/** Pure DOM helpers for browser automation; testable without a live browser. */
 
 import { isSensitiveLabel } from "../live-fields";
 
@@ -56,15 +56,21 @@ export const EXTRACT_FIELDS_SCRIPT = `(() => {
 })()`;
 
 const KEY_PATTERNS: Array<[RegExp, string]> = [
-  [/first\s*name/i, "first_name"],
-  [/last\s*name|surname|family name/i, "last_name"],
-  [/full\s*name/i, "full_name"],
+  [/first\s*name|given\s*name/i, "first_name"],
+  [/last\s*name|surname|family\s*name/i, "last_name"],
+  [/full\s*name|legal\s*name/i, "full_name"],
   [/e-?mail/i, "email"],
   [/phone|mobile|telephone/i, "phone"],
+  [/address\s*(?:line\s*)?2|apt\.?|apartment|suite|unit/i, "address_line2"],
+  [/street\s*address|address\s*(?:line\s*)?1|mailing\s*address|home\s*address/i, "address_line1"],
+  [/\bcity\b|town/i, "city"],
+  [/state|province|region|department/i, "region"],
+  [/postal|zip\s*code|zip\b/i, "postal_code"],
+  [/\bcountry\b/i, "country"],
   [/resume|cv\b/i, "resume"],
   [/cover\s*letter/i, "cover_letter"],
   [/linked-?in/i, "linkedin"],
-  [/website|portfolio|personal site/i, "website"],
+  [/website|portfolio|personal\s*site/i, "website"],
   [/github/i, "github"],
 ];
 
