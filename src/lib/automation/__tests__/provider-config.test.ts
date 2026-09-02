@@ -6,6 +6,8 @@ import { detectProviderConfig, resolveBrowserProvider } from "../provider/resolv
 const KEYS = [
   "BROWSERBASE_API_KEY",
   "BROWSERBASE_PROJECT_ID",
+  "OPENAI_API_KEY",
+  "MODEL_API_KEY",
   "STEEL_API_KEY",
   "PLAYWRIGHT_SERVICE_URL",
   "AUTOMATION_ENABLE_SUBMIT",
@@ -15,6 +17,12 @@ const restore = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 
 function clearAutomationEnv() {
   for (const key of KEYS) delete process.env[key];
+}
+
+function configureExecutableBrowserbase() {
+  process.env["BROWSERBASE_API_KEY"] = "test-only-key";
+  process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
+  process.env["OPENAI_API_KEY"] = "test-model-key";
 }
 
 afterEach(() => {
@@ -36,18 +44,19 @@ describe("browser provider configuration", () => {
     expect(config.healthVerified).toBe(false);
   });
 
-  it("does not become executable with an API key but missing project id", async () => {
+  it("does not become executable with incomplete Stagehand credentials", async () => {
     clearAutomationEnv();
     process.env["BROWSERBASE_API_KEY"] = "test-only-key";
     const config = detectProviderConfig();
     expect(config.configured).toBe(true);
     expect(config.driverAvailable).toBe(true);
     expect(config.missingConfig).toContain("BROWSERBASE_PROJECT_ID");
+    expect(config.missingConfig).toContain("OPENAI_API_KEY");
     expect(config.executable).toBe(false);
     await expect(resolveBrowserProvider({ userId: "test-user" })).resolves.toBeNull();
   });
 
-  it("rejects whitespace-only Browserbase credentials at runtime", async () => {
+  it("rejects whitespace-only legacy Browserbase credentials at runtime", async () => {
     clearAutomationEnv();
     process.env["BROWSERBASE_API_KEY"] = "   ";
     process.env["BROWSERBASE_PROJECT_ID"] = "   ";
@@ -59,7 +68,7 @@ describe("browser provider configuration", () => {
     );
   });
 
-  it("trims Browserbase credentials before runtime initialization", () => {
+  it("trims Browserbase credentials before legacy runtime initialization", () => {
     clearAutomationEnv();
     process.env["BROWSERBASE_API_KEY"] = "  test-only-key  ";
     process.env["BROWSERBASE_PROJECT_ID"] = "  test-project  ";
@@ -72,8 +81,7 @@ describe("browser provider configuration", () => {
 
   it("never claims connectivity has been verified from environment config alone", () => {
     clearAutomationEnv();
-    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
-    process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
+    configureExecutableBrowserbase();
     const config = detectProviderConfig();
     expect(config.executable).toBe(true);
     expect(config.healthVerified).toBe(false);
@@ -91,8 +99,7 @@ describe("browser provider configuration", () => {
 
   it("keeps irreversible submit disabled unless the safety switch is exactly true", () => {
     clearAutomationEnv();
-    process.env["BROWSERBASE_API_KEY"] = "test-only-key";
-    process.env["BROWSERBASE_PROJECT_ID"] = "test-project";
+    configureExecutableBrowserbase();
 
     expect(detectProviderConfig().submitEnabled).toBe(false);
 
