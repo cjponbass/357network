@@ -4,6 +4,8 @@
  *
  * Keep detection host-based. Never classify an unrelated site as an ATS merely
  * because its path or query string contains an ATS-looking token.
+ * Production automation intentionally requires HTTPS before a target can be
+ * treated as a supported ATS so candidate data is never sent to plain HTTP.
  */
 
 import type { AtsProvider } from "./types";
@@ -59,8 +61,12 @@ export function detectAts(rawUrl: string | null | undefined): AtsDetection {
     return { provider: "unknown", reason: "The saved URL could not be parsed.", host: null };
   }
 
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return { provider: "unknown", reason: "The saved URL is not an HTTP(S) job URL.", host: null };
+  if (url.protocol !== "https:") {
+    return {
+      provider: "unknown",
+      reason: "The saved URL must use HTTPS before it can be treated as an automation target.",
+      host: null,
+    };
   }
 
   const host = url.hostname.toLowerCase().replace(/\.$/, "");
