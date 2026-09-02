@@ -50,7 +50,7 @@ async function loadContext(supabase: Client, userId: string, applicationId: stri
   if (appError) throw new Error(appError.message);
   if (!application) throw new Error("Application not found.");
 
-  const [jobRes, profileRes, answersRes, resumeRes] = await Promise.all([
+  const [jobRes, profileRes, answersRes, resumeRes, coverRes] = await Promise.all([
     supabase
       .from("jobs")
       .select("*")
@@ -67,19 +67,41 @@ async function loadContext(supabase: Client, userId: string, applicationId: stri
           .eq("user_id", userId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    application.cover_letter_document_id
+      ? supabase
+          .from("documents")
+          .select("id, name, mime_type, size_bytes")
+          .eq("id", application.cover_letter_document_id)
+          .eq("user_id", userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
   if (jobRes.error) throw new Error(jobRes.error.message);
   if (!jobRes.data) throw new Error("Job not found.");
+  if (profileRes.error) throw new Error(profileRes.error.message);
+  if (answersRes.error) throw new Error(answersRes.error.message);
+  if (resumeRes.error) throw new Error(resumeRes.error.message);
+  if (coverRes.error) throw new Error(coverRes.error.message);
 
-  const { data: materials } = await supabase
+  const { data: materials, error: materialsError } = await supabase
     .from("application_materials")
     .select("cover_letter_text")
     .eq("user_id", userId)
     .eq("job_id", jobRes.data.id)
     .maybeSingle();
+  if (materialsError) throw new Error(materialsError.message);
+
+  const toDocumentFact = (document: typeof resumeRes.data) =>
+    document
+      ? {
+          id: document.id,
+          fileName: document.name,
+          mimeType: document.mime_type,
+          sizeBytes: document.size_bytes,
+        }
+      : null;
 
   const profile = profileRes.data;
-  const resumeDoc = resumeRes.data;
   const candidate: CandidateContext = {
     fullName: profile?.full_name?.trim() || null,
     email: profile?.email ?? null,
@@ -88,14 +110,8 @@ async function loadContext(supabase: Client, userId: string, applicationId: stri
     linkedinUrl: profile?.linkedin_url ?? null,
     githubUrl: profile?.github_url ?? null,
     websiteUrl: profile?.website_url ?? null,
-    resumeDocument: resumeDoc
-      ? {
-          id: resumeDoc.id,
-          fileName: resumeDoc.name,
-          mimeType: resumeDoc.mime_type,
-          sizeBytes: resumeDoc.size_bytes,
-        }
-      : null,
+    resumeDocument: toDocumentFact(resumeRes.data),
+    coverLetterDocument: toDocumentFact(coverRes.data),
     coverLetterText: materials?.cover_letter_text || null,
     savedAnswers: answersRes.data ?? [],
   };
