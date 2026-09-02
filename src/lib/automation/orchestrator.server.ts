@@ -134,14 +134,14 @@ export async function runReadinessCheck(
     unresolved = sanitized.filter((field) => field.source === "unresolved");
     const requiredMissing = unresolved.filter((field) => field.required);
     if (requiredMissing.length > 0) {
-      blockers.push(
-        `${requiredMissing.length} required question(s) need your input: ${requiredMissing
+      notes.push(
+        `Static ATS template suggests ${requiredMissing.length} possible required question(s): ${requiredMissing
           .map((field) => field.label)
-          .join(", ")}.`,
+          .join(", ")}. These are advisory only; the live employer form determines what actually requires your input.`,
       );
     }
     notes.push(
-      "Static readiness only. A real run re-inspects the live form and stops on new required questions.",
+      "Static readiness only. A real run re-inspects the live form and stops only on actual unresolved required questions.",
     );
   }
 
@@ -160,13 +160,11 @@ export async function runReadinessCheck(
     ? "missing_url"
     : !adapter
       ? "unsupported_ats"
-      : unresolved.some((field) => field.required)
-        ? "missing_facts"
-        : !browser.configured
-          ? "no_automation_provider"
-          : !browser.executable
-            ? "provider_unavailable"
-            : null;
+      : !browser.configured
+        ? "no_automation_provider"
+        : !browser.executable
+          ? "provider_unavailable"
+          : null;
 
   const checkedAt = new Date().toISOString();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
