@@ -427,10 +427,9 @@ export async function runSubmission(
     );
   };
 
-  const staticMapped = adapter.mapFacts(adapter.inspectForm(targetUrl).fields, candidate);
-  const staticStop = await stopOnUnresolved(staticMapped);
-  if (staticStop) return staticStop;
-
+  // Static adapter templates are useful for readiness guidance, but they are not the
+  // employer's actual form. A real submission must inspect the live ATS first and
+  // block only on required questions that actually exist there.
   const provider = await resolveBrowserProvider({ userId });
   if (!provider) {
     return finish(
