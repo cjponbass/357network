@@ -18,7 +18,7 @@ export function AppNav() {
   const { user, loading } = useAuth();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  if (loading || !user || pathname === "/" || pathname === "/auth") return null;
+  if (loading || !user || pathname === "/" || pathname === "/auth" || pathname === "/reset-password") return null;
 
   async function signOut() {
     await supabase.auth.signOut();
