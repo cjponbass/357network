@@ -37,6 +37,19 @@ create table if not exists public.employer_profiles (
   updated_at timestamptz not null default now()
 );
 alter table public.employer_profiles enable row level security;
+
+create table if not exists public.employer_interest_requests (
+  id uuid primary key default gen_random_uuid(),
+  employer_user_id uuid not null references auth.users(id) on delete cascade,
+  candidate_user_id uuid not null references auth.users(id) on delete cascade,
+  message text not null check (length(trim(message)) between 1 and 2000),
+  status text not null default 'pending' check (status in ('pending','accepted','declined')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (employer_user_id, candidate_user_id, status)
+);
+alter table public.employer_interest_requests enable row level security;
+
 drop policy if exists "employer_profiles_own_select" on public.employer_profiles;
 drop policy if exists "employer_profiles_interest_candidate_select" on public.employer_profiles;
 drop policy if exists "employer_profiles_own_insert" on public.employer_profiles;
@@ -52,17 +65,6 @@ create policy "employer_profiles_interest_candidate_select" on public.employer_p
 create policy "employer_profiles_own_insert" on public.employer_profiles for insert to authenticated with check (auth.uid() = user_id);
 create policy "employer_profiles_own_update" on public.employer_profiles for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create table if not exists public.employer_interest_requests (
-  id uuid primary key default gen_random_uuid(),
-  employer_user_id uuid not null references auth.users(id) on delete cascade,
-  candidate_user_id uuid not null references auth.users(id) on delete cascade,
-  message text not null check (length(trim(message)) between 1 and 2000),
-  status text not null default 'pending' check (status in ('pending','accepted','declined')),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (employer_user_id, candidate_user_id, status)
-);
-alter table public.employer_interest_requests enable row level security;
 drop policy if exists "interest_employer_select" on public.employer_interest_requests;
 drop policy if exists "interest_candidate_select" on public.employer_interest_requests;
 drop policy if exists "interest_employer_insert" on public.employer_interest_requests;
