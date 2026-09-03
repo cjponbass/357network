@@ -52,11 +52,14 @@ export async function createSubscriptionCheckout(args: {
   else if (args.email) body.set("customer_email", args.email);
   body.set("line_items[0][price]", priceIdFor(args.plan));
   body.set("line_items[0][quantity]", "1");
+  body.set("payment_method_collection", "always");
   if (args.trialDays > 0) body.set("subscription_data[trial_period_days]", String(args.trialDays));
   body.set("subscription_data[metadata][user_id]", args.userId);
   body.set("subscription_data[metadata][plan]", args.plan);
+  body.set("subscription_data[metadata][refund_policy]", "no_refunds_after_charge_except_nonwaivable_law");
   body.set("metadata[user_id]", args.userId);
   body.set("metadata[plan]", args.plan);
+  body.set("metadata[refund_policy]", "no_refunds_after_charge_except_nonwaivable_law");
   body.set("allow_promotion_codes", "true");
 
   const session = await stripePost("/checkout/sessions", body);
