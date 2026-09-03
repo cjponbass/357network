@@ -34,7 +34,7 @@ function Landing() {
           <h1 style={headline}>{BRAND.tagline}</h1>
           <p style={subhead}>Search, prepare, tailor, track and automate supported job applications from one private workspace—with verified submission evidence instead of fake success states.</p>
           <div style={ctaRow}>
-            <Link to="/pricing" style={primaryCta}>Start 5-day free trial</Link>
+            <Link to="/pricing" style={primaryCta}>Create account — start 5-day free trial</Link>
             <Link to="/auth" style={secondaryCta}>Sign in</Link>
           </div>
           <p style={trustLine}>All paid candidate plans include a 5-day free trial. Candidate data stays private unless the candidate explicitly opts into employer discovery.</p>
