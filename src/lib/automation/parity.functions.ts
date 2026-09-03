@@ -1,0 +1,93 @@
+import { createServerFn } from "@tanstack/react-start";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requirePaidPlan } from "@/lib/billing/billing.functions";
+
+export type AutomationPreferences = {
+  manualReview: boolean;
+  aiGeneratedResume: boolean;
+  aiGeneratedCoverLetter: boolean;
+  autoRetrySafeFailures: boolean;
+};
+export type ReviewItem = { applicationId:string; reviewType:string; status:string; createdAt:string; jobTitle:string; company:string };
+export type ApplicationMessage = { id:string; direction:"inbound"|"outbound"; sender:string|null; recipient:string|null; subject:string|null; bodyText:string; receivedAt:string };
+export type PortalCredentialView = { portalUrl:string|null; username:string|null; password:string|null };
+
+type Db = SupabaseClient;
+function admin(): Db {
+  const url=process.env["SUPABASE_URL"]?.trim();
+  const key=process.env["SUPABASE_SERVICE_ROLE_KEY"]?.trim();
+  if(!url||!key) throw new Error("Supabase server configuration is incomplete.");
+  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+}
+
+function validatePrefs(input: AutomationPreferences): AutomationPreferences {
+  return {
+    manualReview:Boolean(input?.manualReview),
+    aiGeneratedResume:Boolean(input?.aiGeneratedResume),
+    aiGeneratedCoverLetter:Boolean(input?.aiGeneratedCoverLetter),
+    autoRetrySafeFailures:Boolean(input?.autoRetrySafeFailures),
+  };
+}
+function validateApplication(input:{applicationId:string}){const applicationId=input?.applicationId?.trim();if(!applicationId)throw new Error("Application is required.");return{applicationId};}
+
+export const getAutomationPreferences=createServerFn({method:"GET"}).middleware([requireSupabaseAuth]).handler(async({context}):Promise<AutomationPreferences>=>{
+  const db=admin();
+  const {data,error}=await db.from("automation_preferences").select("manual_review,ai_generated_resume,ai_generated_cover_letter,auto_retry_safe_failures").eq("user_id",context.userId).maybeSingle();
+  if(error)throw new Error(error.message);
+  return {manualReview:data?.manual_review!==false,aiGeneratedResume:data?.ai_generated_resume!==false,aiGeneratedCoverLetter:data?.ai_generated_cover_letter!==false,autoRetrySafeFailures:data?.auto_retry_safe_failures!==false};
+});
+
+export const saveAutomationPreferences=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator(validatePrefs).handler(async({data,context})=>{
+  await requirePaidPlan(context.supabase,context.userId,"basic");
+  const db=admin();
+  const {error}=await db.from("automation_preferences").upsert({user_id:context.userId,manual_review:data.manualReview,ai_generated_resume:data.aiGeneratedResume,ai_generated_cover_letter:data.aiGeneratedCoverLetter,auto_retry_safe_failures:data.autoRetrySafeFailures,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(error)throw new Error(error.message);return{ok:true};
+});
+
+export const listReviewQueue=createServerFn({method:"GET"}).middleware([requireSupabaseAuth]).handler(async({context}):Promise<ReviewItem[]>=>{
+  const db=admin();
+  const {data,error}=await db.from("application_review_queue").select("application_id,review_type,status,created_at").eq("user_id",context.userId).eq("status","pending").order("created_at",{ascending:false});
+  if(error)throw new Error(error.message);
+  const ids=(data??[]).map((r)=>r.application_id);
+  if(!ids.length)return[];
+  const {data:apps,error:appError}=await db.from("applications").select("id,job_id").eq("user_id",context.userId).in("id",ids);if(appError)throw new Error(appError.message);
+  const jobIds=(apps??[]).map((a)=>a.job_id);const {data:jobs,error:jobError}=await db.from("jobs").select("id,title,company").in("id",jobIds);if(jobError)throw new Error(jobError.message);
+  const appsById=new Map((apps??[]).map((a)=>[a.id,a]));const jobsById=new Map((jobs??[]).map((j)=>[j.id,j]));
+  return(data??[]).map((r)=>{const app=appsById.get(r.application_id);const job=app?jobsById.get(app.job_id):null;return{applicationId:r.application_id,reviewType:r.review_type,status:r.status,createdAt:r.created_at,jobTitle:job?.title??"Application",company:job?.company??"Unknown company"};});
+});
+
+export const queueForReview=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator(validateApplication).handler(async({data,context})=>{
+  await requirePaidPlan(context.supabase,context.userId,"auto");const db=admin();
+  const {data:app,error:appError}=await db.from("applications").select("id").eq("id",data.applicationId).eq("user_id",context.userId).maybeSingle();if(appError||!app)throw new Error(appError?.message??"Application not found.");
+  const {error}=await db.from("application_review_queue").upsert({application_id:data.applicationId,user_id:context.userId,status:"pending",review_type:"documents_and_questions",created_at:new Date().toISOString(),reviewed_at:null},{onConflict:"application_id"});if(error)throw new Error(error.message);return{ok:true};
+});
+
+export const cancelReview=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator(validateApplication).handler(async({data,context})=>{
+  const db=admin();const {error}=await db.from("application_review_queue").update({status:"cancelled",reviewed_at:new Date().toISOString()}).eq("application_id",data.applicationId).eq("user_id",context.userId);if(error)throw new Error(error.message);return{ok:true};
+});
+
+export const listApplicationMessages=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator(validateApplication).handler(async({data,context}):Promise<ApplicationMessage[]>=>{
+  const db=admin();const {data:app}=await db.from("applications").select("id").eq("id",data.applicationId).eq("user_id",context.userId).maybeSingle();if(!app)throw new Error("Application not found.");
+  const {data:rows,error}=await db.from("application_messages").select("id,direction,sender,recipient,subject,body_text,received_at").eq("application_id",data.applicationId).eq("user_id",context.userId).order("received_at",{ascending:false});if(error)throw new Error(error.message);
+  return(rows??[]).map((r)=>({id:r.id,direction:r.direction,sender:r.sender,recipient:r.recipient,subject:r.subject,bodyText:r.body_text,receivedAt:r.received_at}));
+});
+
+export const getPortalCredentials=createServerFn({method:"POST"}).middleware([requireSupabaseAuth]).inputValidator(validateApplication).handler(async({data,context}):Promise<PortalCredentialView|null>=>{
+  const db=admin();const {data:row,error}=await db.from("application_portal_credentials").select("portal_url,username,password_ciphertext").eq("application_id",data.applicationId).eq("user_id",context.userId).maybeSingle();if(error)throw new Error(error.message);if(!row)return null;
+  return{portalUrl:row.portal_url,username:row.username,password:row.password_ciphertext?await decrypt(row.password_ciphertext):null};
+});
+
+export async function storePortalCredentials(args:{applicationId:string;userId:string;portalUrl?:string|null;username?:string|null;password?:string|null}){
+  const db=admin();const ciphertext=args.password?await encrypt(args.password):null;const {error}=await db.from("application_portal_credentials").upsert({application_id:args.applicationId,user_id:args.userId,portal_url:args.portalUrl??null,username:args.username??null,password_ciphertext:ciphertext,updated_at:new Date().toISOString()},{onConflict:"application_id"});if(error)throw new Error(error.message);
+}
+
+export async function ingestApplicationMessage(args:{applicationId:string;userId:string;direction?:"inbound"|"outbound";sender?:string|null;recipient?:string|null;subject?:string|null;bodyText:string;providerMessageId?:string|null;receivedAt?:string}){
+  const db=admin();const {error}=await db.from("application_messages").upsert({application_id:args.applicationId,user_id:args.userId,direction:args.direction??"inbound",sender:args.sender??null,recipient:args.recipient??null,subject:args.subject??null,body_text:args.bodyText,provider_message_id:args.providerMessageId??null,received_at:args.receivedAt??new Date().toISOString()},{onConflict:"user_id,provider_message_id",ignoreDuplicates:true});if(error)throw new Error(error.message);
+}
+
+async function key():Promise<CryptoKey>{const raw=process.env["APP_CREDENTIAL_ENCRYPTION_KEY"]?.trim();if(!raw)throw new Error("APP_CREDENTIAL_ENCRYPTION_KEY is required for portal credential storage.");const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(raw));return crypto.subtle.importKey("raw",digest,"AES-GCM",false,["encrypt","decrypt"]);}
+async function encrypt(value:string){const iv=crypto.getRandomValues(new Uint8Array(12));const bytes=await crypto.subtle.encrypt({name:"AES-GCM",iv},await key(),new TextEncoder().encode(value));return `${toBase64(iv)}.${toBase64(new Uint8Array(bytes))}`;}
+async function decrypt(value:string){const [ivText,dataText]=value.split(".");if(!ivText||!dataText)throw new Error("Stored credential is invalid.");const bytes=await crypto.subtle.decrypt({name:"AES-GCM",iv:fromBase64(ivText)},await key(),fromBase64(dataText));return new TextDecoder().decode(bytes);}
+function toBase64(bytes:Uint8Array){return Buffer.from(bytes).toString("base64url");}function fromBase64(value:string){return new Uint8Array(Buffer.from(value,"base64url"));}
