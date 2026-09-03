@@ -8,36 +8,36 @@ const capabilities = [
   ["AI preparation", "Generate fact-grounded fit analysis, tailored resume material, cover letters, and safe application-answer suggestions."],
   ["Reusable candidate data", "Keep your profile, private documents, and saved answers organized so you do not rebuild the same application details every time."],
   ["Application tracking", "Track drafts, submissions, interviews, offers, status history, and the evidence attached to verified automated submissions."],
-  ["Conservative automation", "Unknown required questions, sensitive answers, CAPTCHAs, authentication walls, and unsupported controls stop for your input."],
-  ["Verified submission receipts", "357 Network only records an automated submission as successful when concrete post-submit confirmation evidence is present."],
+  ["Mason visibility", "Candidates can identify themselves as Masons and separately opt in to employer discovery. Employers can filter opted-in talent for Masons without seeing private candidate data."],
+  ["Verified automation", "Supported ATS automation stops on unresolved required questions, sensitive decisions, CAPTCHA, authentication walls, or uncertain submission states."],
 ] as const;
 
 const steps = [
-  ["1", "Build your private profile", "Add the candidate facts, documents, preferences, and reusable answers you want available across applications."],
+  ["1", "Build your private profile", "Add candidate facts, documents, preferences, reusable answers, and your optional Mason/employer-visibility settings."],
   ["2", "Save and prepare for a job", "Store the job, analyze fit, tailor application material, and resolve anything that needs your judgment."],
-  ["3", "Track every application", "Keep the application record, status history, automation diagnostics, and verified receipt evidence together."],
+  ["3", "Track and automate safely", "Keep application history, automation diagnostics, and verified receipt evidence together."],
+] as const;
+
+const prices = [
+  ["Basic", "$14.99", "Core job search, tracking, documents, saved answers and AI assistance."],
+  ["Pro", "$29.99", "Everything in Basic plus tailored resumes, cover letters and private PDF export."],
+  ["Auto", "$39.99", "Everything in Pro plus supported ATS automation and verified auto-submit when the global safety gate is enabled."],
 ] as const;
 
 function Landing() {
   return (
     <main style={page}>
       <section style={hero}>
-        <img
-          src={BRAND.headerImagePath}
-          alt="357 Network panoramic logo with moon, Gothic lettering, radiant sun, stars, and checkerboard floor"
-          style={headerImage}
-        />
+        <img src={BRAND.headerImagePath} alt="357 Network panoramic logo with moon, Gothic lettering, radiant sun, stars, and checkerboard floor" style={headerImage} />
         <div style={heroCopy}>
-          <p style={eyebrow}>PRIVATE JOB-APPLICATION WORKSPACE</p>
+          <p style={eyebrow}>AUTOMATED JOB-APPLICATION PLATFORM</p>
           <h1 style={headline}>{BRAND.tagline}</h1>
-          <p style={subhead}>
-            Prepare stronger applications, reuse your information, track every opportunity, and automate supported ATS workflows without pretending a submission happened when it did not.
-          </p>
+          <p style={subhead}>Search, prepare, tailor, track and automate supported job applications from one private workspace—with verified submission evidence instead of fake success states.</p>
           <div style={ctaRow}>
-            <Link to="/auth" style={primaryCta}>Create account</Link>
+            <Link to="/pricing" style={primaryCta}>Start 5-day free trial</Link>
             <Link to="/auth" style={secondaryCta}>Sign in</Link>
           </div>
-          <p style={trustLine}>Your candidate profile, saved answers, documents, jobs, and applications remain private to your account.</p>
+          <p style={trustLine}>All paid candidate plans include a 5-day free trial. Candidate data stays private unless the candidate explicitly opts into employer discovery.</p>
         </div>
       </section>
 
@@ -45,11 +45,9 @@ function Landing() {
         <div style={sectionHeading}>
           <p style={eyebrow}>ONE WORKSPACE</p>
           <h2 id="capabilities-heading" style={sectionTitle}>From job discovery to verified application history</h2>
-          <p style={sectionIntro}>357 Network is designed around the repetitive work that makes serious job searching exhausting, while keeping judgment and sensitive decisions with you.</p>
+          <p style={sectionIntro}>357 Network reduces repetitive job-search work while keeping sensitive decisions and privacy under the user’s control.</p>
         </div>
-        <div style={cardGrid}>
-          {capabilities.map(([title, body]) => <Feature key={title} title={title} body={body} />)}
-        </div>
+        <div style={cardGrid}>{capabilities.map(([title, body]) => <Feature key={title} title={title} body={body} />)}</div>
       </section>
 
       <section style={darkSection} aria-labelledby="workflow-heading">
@@ -57,50 +55,37 @@ function Landing() {
           <p style={eyebrowLight}>A CLEAR WORKFLOW</p>
           <h2 id="workflow-heading" style={sectionTitleDark}>Prepare once. Reuse intelligently. Verify what happened.</h2>
         </div>
-        <div style={stepsGrid}>
-          {steps.map(([number, title, body]) => (
-            <article key={number} style={stepCard}>
-              <div style={stepNumber}>{number}</div>
-              <h3 style={stepTitle}>{title}</h3>
-              <p style={stepBody}>{body}</p>
-            </article>
-          ))}
+        <div style={stepsGrid}>{steps.map(([number, title, body]) => <article key={number} style={stepCard}><div style={stepNumber}>{number}</div><h3 style={stepTitle}>{title}</h3><p style={stepBody}>{body}</p></article>)}</div>
+      </section>
+
+      <section style={section} aria-labelledby="pricing-heading">
+        <div style={{...sectionHeading,textAlign:"center",marginLeft:"auto",marginRight:"auto"}}>
+          <p style={eyebrow}>5-DAY FREE TRIAL</p>
+          <h2 id="pricing-heading" style={sectionTitle}>Simple monthly pricing</h2>
+          <p style={sectionIntro}>No weekly billing and no expiring application-credit system.</p>
         </div>
+        <div style={cardGrid}>{prices.map(([name, price, body]) => <article key={name} style={card}><h3 style={{fontSize:22,margin:0}}>{name}</h3><div style={{fontSize:34,fontWeight:850,marginTop:8}}>{price}<span style={{fontSize:14,fontWeight:500}}>/month</span></div><p style={{color:"#4b5563",lineHeight:1.62}}>{body}</p><strong>5-day free trial</strong></article>)}</div>
+        <div style={{textAlign:"center",marginTop:28}}><Link to="/pricing" style={primaryCta}>Compare plans and start trial</Link></div>
       </section>
 
       <section style={safetySection} aria-labelledby="safety-heading">
-        <div>
-          <p style={eyebrow}>AUTOMATION WITH BOUNDARIES</p>
-          <h2 id="safety-heading" style={sectionTitle}>Built to stop when a human decision is required</h2>
-        </div>
-        <div style={safetyGrid}>
-          <p style={safetyCopy}>357 Network does not bypass CAPTCHA or authentication controls, guess sensitive answers, or convert an uncertain browser state into a fake success.</p>
-          <p style={safetyCopy}>Final automated submission remains behind an explicit production safety gate until controlled provider and ATS validation has passed.</p>
-        </div>
+        <div><p style={eyebrow}>AUTOMATION WITH BOUNDARIES</p><h2 id="safety-heading" style={sectionTitle}>Built to stop when a human decision is required</h2></div>
+        <div style={safetyGrid}><p style={safetyCopy}>357 Network does not bypass CAPTCHA or authentication controls, guess sensitive answers, or convert an uncertain browser state into a fake success.</p><p style={safetyCopy}>Final automated submission remains behind an explicit production safety gate until controlled provider and ATS validation has passed.</p></div>
       </section>
 
       <section style={finalCta}>
-        <h2 style={{ fontSize: "clamp(28px, 5vw, 44px)", margin: 0, lineHeight: 1.08 }}>Put your application work in one place.</h2>
-        <p style={{ color: "#4b5563", fontSize: 18, lineHeight: 1.6, maxWidth: 680, margin: "16px auto 24px" }}>Create your private workspace and start with the candidate information you already reuse from application to application.</p>
-        <Link to="/auth" style={primaryCta}>Open 357 Network</Link>
+        <h2 style={{ fontSize: "clamp(28px, 5vw, 44px)", margin: 0, lineHeight: 1.08 }}>Start your 5-day free trial.</h2>
+        <p style={{ color: "#4b5563", fontSize: 18, lineHeight: 1.6, maxWidth: 680, margin: "16px auto 24px" }}>Choose the level of automation you want and keep all of your application work in one place.</p>
+        <Link to="/pricing" style={primaryCta}>View pricing</Link>
       </section>
 
-      <footer style={footer}>
-        <strong>{BRAND.name}</strong>
-        <span>{BRAND.tagline}</span>
-        <span>{BRAND.domain}</span>
-      </footer>
+      <footer style={footer}><strong>{BRAND.name}</strong><span>{BRAND.tagline}</span><span>{BRAND.domain}</span><Link to="/pricing" style={{color:"#4b5563"}}>Pricing</Link></footer>
     </main>
   );
 }
 
 function Feature({ title, body }: { title: string; body: string }) {
-  return (
-    <article style={card}>
-      <h3 style={{ fontSize: 19, margin: 0 }}>{title}</h3>
-      <p style={{ color: "#4b5563", lineHeight: 1.62, margin: "10px 0 0" }}>{body}</p>
-    </article>
-  );
+  return <article style={card}><h3 style={{ fontSize: 19, margin: 0 }}>{title}</h3><p style={{ color: "#4b5563", lineHeight: 1.62, margin: "10px 0 0" }}>{body}</p></article>;
 }
 
 const page: React.CSSProperties = { fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#111827", background: "#ffffff" };
