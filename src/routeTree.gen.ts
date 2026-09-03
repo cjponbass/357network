@@ -22,6 +22,7 @@ import { Route as InterestsRouteImport } from "./routes/interests";
 import { Route as ReviewRouteImport } from "./routes/review";
 import { Route as AutomationSettingsRouteImport } from "./routes/automation-settings";
 import { Route as AutomationCenterRouteImport } from "./routes/automation-center";
+import { Route as QuickApplyRouteImport } from "./routes/quick-apply";
 import { Route as ApiStripeWebhookRouteImport } from "./routes/api.stripe.webhook";
 import { Route as ApiApplicationMailWebhookRouteImport } from "./routes/api.application-mail.webhook";
 
@@ -45,22 +46,23 @@ const InterestsRoute=InterestsRouteImport.update({id:"/interests",path:"/interes
 const ReviewRoute=ReviewRouteImport.update({id:"/review",path:"/review",getParentRoute:()=>rootRouteImport} as any);
 const AutomationSettingsRoute=AutomationSettingsRouteImport.update({id:"/automation-settings",path:"/automation-settings",getParentRoute:()=>rootRouteImport} as any);
 const AutomationCenterRoute=AutomationCenterRouteImport.update({id:"/automation-center",path:"/automation-center",getParentRoute:()=>rootRouteImport} as any);
+const QuickApplyRoute=QuickApplyRouteImport.update({id:"/quick-apply",path:"/quick-apply",getParentRoute:()=>rootRouteImport} as any);
 const ApiStripeWebhookRoute=ApiStripeWebhookRouteImport.update({id:"/api/stripe/webhook",path:"/api/stripe/webhook",getParentRoute:()=>rootRouteImport} as any);
 const ApiApplicationMailWebhookRoute=ApiApplicationMailWebhookRouteImport.update({id:"/api/application-mail/webhook",path:"/api/application-mail/webhook",getParentRoute:()=>rootRouteImport} as any);
 
 export interface FileRoutesByFullPath {
-  "/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
+  "/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
-  __root__:typeof rootRouteImport;"/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications_/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
+  __root__:typeof rootRouteImport;"/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications_/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath:FileRoutesByFullPath;
-  fullPaths:"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/api/stripe/webhook"|"/api/application-mail/webhook";
+  fullPaths:"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
   fileRoutesByTo:FileRoutesByTo;
   to:FileRouteTypes["fullPaths"];
-  id:"__root__"|"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications_/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/api/stripe/webhook"|"/api/application-mail/webhook";
+  id:"__root__"|"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications_/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
   fileRoutesById:FileRoutesById;
 }
 
@@ -86,10 +88,11 @@ declare module "@tanstack/react-router" {
     "/review":{id:"/review";path:"/review";fullPath:"/review";preLoaderRoute:typeof ReviewRouteImport;parentRoute:typeof rootRouteImport};
     "/automation-settings":{id:"/automation-settings";path:"/automation-settings";fullPath:"/automation-settings";preLoaderRoute:typeof AutomationSettingsRouteImport;parentRoute:typeof rootRouteImport};
     "/automation-center":{id:"/automation-center";path:"/automation-center";fullPath:"/automation-center";preLoaderRoute:typeof AutomationCenterRouteImport;parentRoute:typeof rootRouteImport};
+    "/quick-apply":{id:"/quick-apply";path:"/quick-apply";fullPath:"/quick-apply";preLoaderRoute:typeof QuickApplyRouteImport;parentRoute:typeof rootRouteImport};
     "/api/stripe/webhook":{id:"/api/stripe/webhook";path:"/api/stripe/webhook";fullPath:"/api/stripe/webhook";preLoaderRoute:typeof ApiStripeWebhookRouteImport;parentRoute:typeof rootRouteImport};
     "/api/application-mail/webhook":{id:"/api/application-mail/webhook";path:"/api/application-mail/webhook";fullPath:"/api/application-mail/webhook";preLoaderRoute:typeof ApiApplicationMailWebhookRouteImport;parentRoute:typeof rootRouteImport};
   }
 }
 
-const rootRouteChildren={IndexRoute,AuthRoute,ResetPasswordRoute,DashboardRoute,DiscoverRoute,JobsRoute,ApplicationsRoute,ApplicationDetailRoute,DocumentsRoute,ProfileRoute,SettingsRoute,PrepareRoute,AnswersRoute,PricingRoute,BillingRoute,EmployerRoute,InterestsRoute,ReviewRoute,AutomationSettingsRoute,AutomationCenterRoute,ApiStripeWebhookRoute,ApiApplicationMailWebhookRoute};
+const rootRouteChildren={IndexRoute,AuthRoute,ResetPasswordRoute,DashboardRoute,DiscoverRoute,JobsRoute,ApplicationsRoute,ApplicationDetailRoute,DocumentsRoute,ProfileRoute,SettingsRoute,PrepareRoute,AnswersRoute,PricingRoute,BillingRoute,EmployerRoute,InterestsRoute,ReviewRoute,AutomationSettingsRoute,AutomationCenterRoute,QuickApplyRoute,ApiStripeWebhookRoute,ApiApplicationMailWebhookRoute};
 export const routeTree=rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>();
