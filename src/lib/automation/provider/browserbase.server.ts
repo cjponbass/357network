@@ -76,6 +76,7 @@ interface SessionState {
   bbSessionId: string;
   browser: BrowserLike;
   page: PageLike;
+  targetUrl: string;
   fields: NormalizedDomField[];
   submitted: boolean;
 }
@@ -89,6 +90,13 @@ export function isTrustedAtsNavigation(targetUrl: string, finalUrl: string): boo
   const final = detectAts(finalUrl);
   return target.provider !== "unknown" && final.provider === target.provider;
 }
+
+function isSessionStillTrusted(current: SessionState): boolean {
+  return isTrustedAtsNavigation(current.targetUrl, current.page.url());
+}
+
+const TRUST_BOUNDARY_MESSAGE =
+  "Navigation left the trusted ATS provider. Automation stopped before entering or sending any additional candidate data.";
 
 export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomationProvider {
   const sessions = new Map<string, SessionState>();
@@ -129,6 +137,7 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
         bbSessionId: remote.id,
         browser: connected.browser,
         page: connected.page,
+        targetUrl,
         fields: [],
         submitted: false,
       });
@@ -137,6 +146,9 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
 
     async inspect(session: ProviderSession): Promise<ProviderInspectResult> {
       const current = state(session);
+      if (!isSessionStillTrusted(current)) {
+        return { fields: [], blockers: [blocker("provider_error", TRUST_BOUNDARY_MESSAGE)] };
+      }
       let signal: DomFieldSignal;
       try {
         signal = await current.page.evaluate<DomFieldSignal>(EXTRACT_FIELDS_SCRIPT);
@@ -171,6 +183,10 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
       const selectors = new Map(current.fields.map((f) => [f.key, f.selector]));
 
       for (const input of values) {
+        if (!isSessionStillTrusted(current)) {
+          blockers.push(blocker("provider_error", TRUST_BOUNDARY_MESSAGE, input.key));
+          break;
+        }
         const selector = selectors.get(input.key);
         if (!selector) {
           failed.push({ key: input.key, reason: "No matching field on the live form." });
@@ -188,6 +204,10 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
         let local: LocalFile | null = null;
         try {
           local = await deps.downloadDocument(input.value.documentId);
+          if (!isSessionStillTrusted(current)) {
+            blockers.push(blocker("provider_error", TRUST_BOUNDARY_MESSAGE, input.key));
+            break;
+          }
           await current.page.setInputFiles(selector, local.path);
           filled.push(input.key);
         } catch {
@@ -208,7 +228,13 @@ export function createBrowserbaseProvider(deps: BrowserbaseDeps): BrowserAutomat
           blockers: [blocker("provider_unavailable", "The final submit step is disabled by the execution boundary. Everything up to submission ran; nothing was sent to the employer.")],
         };
       }
+      if (!isSessionStillTrusted(current)) {
+        return { submitted: false, blockers: [blocker("provider_error", TRUST_BOUNDARY_MESSAGE)] };
+      }
       for (const selector of SUBMIT_SELECTORS) {
+        if (!isSessionStillTrusted(current)) {
+          return { submitted: false, blockers: [blocker("provider_error", TRUST_BOUNDARY_MESSAGE)] };
+        }
         try {
           await current.page.click(selector, { timeout: 5_000 });
           current.submitted = true;
