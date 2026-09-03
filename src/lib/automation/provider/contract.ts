@@ -16,76 +16,26 @@ export type ProviderBlockerKind =
   | "verification_failed"
   | "provider_error";
 
-export interface ProviderBlocker {
-  kind: ProviderBlockerKind;
-  message: string;
-  fieldKey?: string;
-}
-
-export interface ProviderSession {
-  sessionId: string;
-  pageUrl: string | null;
-}
-
-export interface ProviderInspectResult {
-  fields: Array<{
-    key: string;
-    label: string;
-    required: boolean;
-    sensitive: boolean;
-    kind: string;
-  }>;
-  blockers: ProviderBlocker[];
-}
-
-export type ProviderFillValue =
-  | { type: "text"; text: string }
-  | {
-      type: "private_file";
-      documentId: string;
-      fileName: string;
-      mimeType: string | null;
-      sizeBytes: number | null;
-    };
-
-export interface ProviderFillInput {
-  key: string;
-  value: ProviderFillValue;
-  kind: string;
-}
-
-export interface ProviderFillResult {
-  filled: string[];
-  failed: Array<{ key: string; reason: string }>;
-  blockers: ProviderBlocker[];
-}
-
-export interface ProviderSubmitResult {
-  submitted: boolean;
-  blockers: ProviderBlocker[];
-}
-
-export interface ProviderVerifyResult {
-  verified: boolean;
-  confirmationText: string | null;
-  confirmationUrl: string | null;
-  blockers: ProviderBlocker[];
-}
-
-export interface ProviderEvidence {
-  [key: string]: unknown;
-  screenshotPath: string | null;
-  pageUrl: string | null;
-  capturedAt: string;
-}
+export interface ProviderBlocker { kind:ProviderBlockerKind; message:string; fieldKey?:string }
+export interface ProviderSession { sessionId:string; pageUrl:string|null }
+export interface ProviderInspectResult { fields:Array<{key:string;label:string;required:boolean;sensitive:boolean;kind:string}>; blockers:ProviderBlocker[] }
+export type ProviderFillValue={type:"text";text:string}|{type:"private_file";documentId:string;fileName:string;mimeType:string|null;sizeBytes:number|null};
+export interface ProviderFillInput { key:string; value:ProviderFillValue; kind:string }
+export interface ProviderFillResult { filled:string[]; failed:Array<{key:string;reason:string}>; blockers:ProviderBlocker[] }
+export interface ProviderSubmitResult { submitted:boolean; blockers:ProviderBlocker[] }
+export interface ProviderAdvanceResult { advanced:boolean; blockers:ProviderBlocker[] }
+export interface ProviderVerifyResult { verified:boolean; confirmationText:string|null; confirmationUrl:string|null; blockers:ProviderBlocker[] }
+export interface ProviderEvidence { [key:string]:unknown; screenshotPath:string|null; pageUrl:string|null; capturedAt:string }
 
 export interface BrowserAutomationProvider {
-  name: string;
-  openSession(targetUrl: string): Promise<ProviderSession>;
-  inspect(session: ProviderSession): Promise<ProviderInspectResult>;
-  fill(session: ProviderSession, values: ProviderFillInput[]): Promise<ProviderFillResult>;
-  submit(session: ProviderSession): Promise<ProviderSubmitResult>;
-  verify(session: ProviderSession): Promise<ProviderVerifyResult>;
-  captureEvidence(session: ProviderSession): Promise<ProviderEvidence>;
-  closeSession(session: ProviderSession): Promise<void>;
+  name:string;
+  openSession(targetUrl:string):Promise<ProviderSession>;
+  inspect(session:ProviderSession):Promise<ProviderInspectResult>;
+  fill(session:ProviderSession,values:ProviderFillInput[]):Promise<ProviderFillResult>;
+  /** Advance a multi-page ATS flow without sending the application. */
+  advance?(session:ProviderSession):Promise<ProviderAdvanceResult>;
+  submit(session:ProviderSession):Promise<ProviderSubmitResult>;
+  verify(session:ProviderSession):Promise<ProviderVerifyResult>;
+  captureEvidence(session:ProviderSession):Promise<ProviderEvidence>;
+  closeSession(session:ProviderSession):Promise<void>;
 }
