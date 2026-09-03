@@ -18,6 +18,7 @@ import { Route as AnswersRouteImport } from "./routes/answers";
 import { Route as PricingRouteImport } from "./routes/pricing";
 import { Route as BillingRouteImport } from "./routes/billing";
 import { Route as EmployerRouteImport } from "./routes/employer";
+import { Route as InterestsRouteImport } from "./routes/interests";
 import { Route as ApiStripeWebhookRouteImport } from "./routes/api.stripe.webhook";
 
 const IndexRoute = IndexRouteImport.update({ id: "/", path: "/", getParentRoute: () => rootRouteImport } as any);
@@ -36,6 +37,7 @@ const AnswersRoute = AnswersRouteImport.update({ id: "/answers", path: "/answers
 const PricingRoute = PricingRouteImport.update({ id: "/pricing", path: "/pricing", getParentRoute: () => rootRouteImport } as any);
 const BillingRoute = BillingRouteImport.update({ id: "/billing", path: "/billing", getParentRoute: () => rootRouteImport } as any);
 const EmployerRoute = EmployerRouteImport.update({ id: "/employer", path: "/employer", getParentRoute: () => rootRouteImport } as any);
+const InterestsRoute = InterestsRouteImport.update({ id: "/interests", path: "/interests", getParentRoute: () => rootRouteImport } as any);
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({ id: "/api/stripe/webhook", path: "/api/stripe/webhook", getParentRoute: () => rootRouteImport } as any);
 
 export interface FileRoutesByFullPath {
@@ -55,6 +57,7 @@ export interface FileRoutesByFullPath {
   "/pricing": typeof PricingRoute;
   "/billing": typeof BillingRoute;
   "/employer": typeof EmployerRoute;
+  "/interests": typeof InterestsRoute;
   "/api/stripe/webhook": typeof ApiStripeWebhookRoute;
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
@@ -76,14 +79,15 @@ export interface FileRoutesById {
   "/pricing": typeof PricingRoute;
   "/billing": typeof BillingRoute;
   "/employer": typeof EmployerRoute;
+  "/interests": typeof InterestsRoute;
   "/api/stripe/webhook": typeof ApiStripeWebhookRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/api/stripe/webhook";
+  fullPaths: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/interests" | "/api/stripe/webhook";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/api/stripe/webhook";
-  id: "__root__" | "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/api/stripe/webhook";
+  to: "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/interests" | "/api/stripe/webhook";
+  id: "__root__" | "/" | "/auth" | "/reset-password" | "/dashboard" | "/discover" | "/jobs" | "/applications" | "/applications_/$applicationId" | "/documents" | "/profile" | "/settings" | "/prepare" | "/answers" | "/pricing" | "/billing" | "/employer" | "/interests" | "/api/stripe/webhook";
   fileRoutesById: FileRoutesById;
 }
 
@@ -105,11 +109,12 @@ declare module "@tanstack/react-router" {
     "/pricing": { id: "/pricing"; path: "/pricing"; fullPath: "/pricing"; preLoaderRoute: typeof PricingRouteImport; parentRoute: typeof rootRouteImport };
     "/billing": { id: "/billing"; path: "/billing"; fullPath: "/billing"; preLoaderRoute: typeof BillingRouteImport; parentRoute: typeof rootRouteImport };
     "/employer": { id: "/employer"; path: "/employer"; fullPath: "/employer"; preLoaderRoute: typeof EmployerRouteImport; parentRoute: typeof rootRouteImport };
+    "/interests": { id: "/interests"; path: "/interests"; fullPath: "/interests"; preLoaderRoute: typeof InterestsRouteImport; parentRoute: typeof rootRouteImport };
     "/api/stripe/webhook": { id: "/api/stripe/webhook"; path: "/api/stripe/webhook"; fullPath: "/api/stripe/webhook"; preLoaderRoute: typeof ApiStripeWebhookRouteImport; parentRoute: typeof rootRouteImport };
   }
 }
 
-const rootRouteChildren = { IndexRoute, AuthRoute, ResetPasswordRoute, DashboardRoute, DiscoverRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute, AnswersRoute, PricingRoute, BillingRoute, EmployerRoute, ApiStripeWebhookRoute };
+const rootRouteChildren = { IndexRoute, AuthRoute, ResetPasswordRoute, DashboardRoute, DiscoverRoute, JobsRoute, ApplicationsRoute, ApplicationDetailRoute, DocumentsRoute, ProfileRoute, SettingsRoute, PrepareRoute, AnswersRoute, PricingRoute, BillingRoute, EmployerRoute, InterestsRoute, ApiStripeWebhookRoute };
 
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
