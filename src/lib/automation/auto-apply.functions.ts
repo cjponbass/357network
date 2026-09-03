@@ -23,8 +23,9 @@ export const applyWith357=createServerFn({method:"POST"})
     const {data:job,error:jobError}=await supabaseAdmin.from("jobs").select("id,title,company,source_url").eq("id",data.jobId).eq("created_by",context.userId).maybeSingle();
     if(jobError)throw new Error(jobError.message);if(!job)throw new Error("Saved job not found.");if(!job.source_url)throw new Error("This saved job has no employer application URL.");
 
-    let {data:application,error:appError}=await supabaseAdmin.from("applications").select("id,resume_document_id,cover_letter_document_id,status").eq("job_id",job.id).eq("user_id",context.userId).maybeSingle();
-    if(appError)throw new Error(appError.message);
+    const existingApplication=await supabaseAdmin.from("applications").select("id,resume_document_id,cover_letter_document_id,status").eq("job_id",job.id).eq("user_id",context.userId).maybeSingle();
+    if(existingApplication.error)throw new Error(existingApplication.error.message);
+    let application=existingApplication.data;
     if(!application){const created=await supabaseAdmin.from("applications").insert({user_id:context.userId,job_id:job.id,status:"draft"}).select("id,resume_document_id,cover_letter_document_id,status").single();if(created.error)throw new Error(created.error.message);application=created.data;}
 
     const {data:prefs,error:prefsError}=await supabaseAdmin.from("automation_preferences").select("manual_review,ai_generated_resume,ai_generated_cover_letter").eq("user_id",context.userId).maybeSingle();
