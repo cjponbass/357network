@@ -7,9 +7,9 @@ import { PLAN_ENTITLEMENTS, PLAN_LABELS, type CandidatePlan } from "@/lib/billin
 export const Route = createFileRoute("/pricing")({ component: PricingPage });
 
 const copy: Record<CandidatePlan, string[]> = {
-  basic: ["Private candidate profile", "Job discovery and saved jobs", "Application tracking", "Documents and saved answers", "10 AI preparations / month"],
-  pro: ["Everything in Basic", "100 AI preparations / month", "Tailored resume + cover letter", "Private PDF export", "Unlimited saved jobs"],
-  auto: ["Everything in Pro", "250 AI preparations / month", "Supported ATS automation", "Browser automation dry runs", "Verified auto-submit when global safety gate is enabled"],
+  basic: ["Private candidate profile", "Job discovery and saved jobs", "Application tracking", "Documents and saved answers", "AI job-fit analysis and fact-grounded answer help"],
+  pro: ["Everything in Basic", "Tailored resume generation", "Tailored cover-letter generation", "Private PDF export", "Full professional application-preparation workflow"],
+  auto: ["Everything in Pro", "Supported ATS automation", "Browser automation dry runs", "Required-question and CAPTCHA safeguards", "Verified auto-submit when the global safety gate is enabled"],
 };
 
 function PricingPage() {
