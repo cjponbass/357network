@@ -12,6 +12,8 @@ const links = [
   ["Applications", "/applications"],
   ["Documents", "/documents"],
   ["Profile", "/profile"],
+  ["Billing", "/billing"],
+  ["Employer Talent", "/employer"],
   ["Settings", "/settings"],
 ] as const;
 
@@ -19,7 +21,7 @@ export function AppNav() {
   const { user, loading } = useAuth();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  if (loading || !user || pathname === "/" || pathname === "/auth" || pathname === "/reset-password") return null;
+  if (loading || !user || pathname === "/" || pathname === "/auth" || pathname === "/reset-password" || pathname === "/pricing") return null;
 
   async function signOut() {
     await supabase.auth.signOut();
