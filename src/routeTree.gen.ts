@@ -7,6 +7,8 @@ import { Route as AuthRouteImport } from "./routes/auth";
 import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
 import { Route as DashboardRouteImport } from "./routes/dashboard";
 import { Route as DiscoverRouteImport } from "./routes/discover";
+import { Route as JobFeedRouteImport } from "./routes/job-feed";
+import { Route as SkippedJobsRouteImport } from "./routes/skipped-jobs";
 import { Route as JobsRouteImport } from "./routes/jobs";
 import { Route as ApplicationsRouteImport } from "./routes/applications";
 import { Route as ApplicationDetailRouteImport } from "./routes/applications_.$applicationId";
@@ -31,6 +33,8 @@ const AuthRoute=AuthRouteImport.update({id:"/auth",path:"/auth",getParentRoute:(
 const ResetPasswordRoute=ResetPasswordRouteImport.update({id:"/reset-password",path:"/reset-password",getParentRoute:()=>rootRouteImport} as any);
 const DashboardRoute=DashboardRouteImport.update({id:"/dashboard",path:"/dashboard",getParentRoute:()=>rootRouteImport} as any);
 const DiscoverRoute=DiscoverRouteImport.update({id:"/discover",path:"/discover",getParentRoute:()=>rootRouteImport} as any);
+const JobFeedRoute=JobFeedRouteImport.update({id:"/job-feed",path:"/job-feed",getParentRoute:()=>rootRouteImport} as any);
+const SkippedJobsRoute=SkippedJobsRouteImport.update({id:"/skipped-jobs",path:"/skipped-jobs",getParentRoute:()=>rootRouteImport} as any);
 const JobsRoute=JobsRouteImport.update({id:"/jobs",path:"/jobs",getParentRoute:()=>rootRouteImport} as any);
 const ApplicationsRoute=ApplicationsRouteImport.update({id:"/applications",path:"/applications",getParentRoute:()=>rootRouteImport} as any);
 const ApplicationDetailRoute=ApplicationDetailRouteImport.update({id:"/applications_/$applicationId",path:"/applications/$applicationId",getParentRoute:()=>rootRouteImport} as any);
@@ -51,18 +55,18 @@ const ApiStripeWebhookRoute=ApiStripeWebhookRouteImport.update({id:"/api/stripe/
 const ApiApplicationMailWebhookRoute=ApiApplicationMailWebhookRouteImport.update({id:"/api/application-mail/webhook",path:"/api/application-mail/webhook",getParentRoute:()=>rootRouteImport} as any);
 
 export interface FileRoutesByFullPath {
-  "/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
+  "/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/job-feed":typeof JobFeedRoute;"/skipped-jobs":typeof SkippedJobsRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
-  __root__:typeof rootRouteImport;"/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications_/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
+  __root__:typeof rootRouteImport;"/":typeof IndexRoute;"/auth":typeof AuthRoute;"/reset-password":typeof ResetPasswordRoute;"/dashboard":typeof DashboardRoute;"/discover":typeof DiscoverRoute;"/job-feed":typeof JobFeedRoute;"/skipped-jobs":typeof SkippedJobsRoute;"/jobs":typeof JobsRoute;"/applications":typeof ApplicationsRoute;"/applications_/$applicationId":typeof ApplicationDetailRoute;"/documents":typeof DocumentsRoute;"/profile":typeof ProfileRoute;"/settings":typeof SettingsRoute;"/prepare":typeof PrepareRoute;"/answers":typeof AnswersRoute;"/pricing":typeof PricingRoute;"/billing":typeof BillingRoute;"/employer":typeof EmployerRoute;"/interests":typeof InterestsRoute;"/review":typeof ReviewRoute;"/automation-settings":typeof AutomationSettingsRoute;"/automation-center":typeof AutomationCenterRoute;"/quick-apply":typeof QuickApplyRoute;"/api/stripe/webhook":typeof ApiStripeWebhookRoute;"/api/application-mail/webhook":typeof ApiApplicationMailWebhookRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath:FileRoutesByFullPath;
-  fullPaths:"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
+  fullPaths:"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/job-feed"|"/skipped-jobs"|"/jobs"|"/applications"|"/applications/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
   fileRoutesByTo:FileRoutesByTo;
   to:FileRouteTypes["fullPaths"];
-  id:"__root__"|"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/jobs"|"/applications"|"/applications_/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
+  id:"__root__"|"/"|"/auth"|"/reset-password"|"/dashboard"|"/discover"|"/job-feed"|"/skipped-jobs"|"/jobs"|"/applications"|"/applications_/$applicationId"|"/documents"|"/profile"|"/settings"|"/prepare"|"/answers"|"/pricing"|"/billing"|"/employer"|"/interests"|"/review"|"/automation-settings"|"/automation-center"|"/quick-apply"|"/api/stripe/webhook"|"/api/application-mail/webhook";
   fileRoutesById:FileRoutesById;
 }
 
@@ -73,6 +77,8 @@ declare module "@tanstack/react-router" {
     "/reset-password":{id:"/reset-password";path:"/reset-password";fullPath:"/reset-password";preLoaderRoute:typeof ResetPasswordRouteImport;parentRoute:typeof rootRouteImport};
     "/dashboard":{id:"/dashboard";path:"/dashboard";fullPath:"/dashboard";preLoaderRoute:typeof DashboardRouteImport;parentRoute:typeof rootRouteImport};
     "/discover":{id:"/discover";path:"/discover";fullPath:"/discover";preLoaderRoute:typeof DiscoverRouteImport;parentRoute:typeof rootRouteImport};
+    "/job-feed":{id:"/job-feed";path:"/job-feed";fullPath:"/job-feed";preLoaderRoute:typeof JobFeedRouteImport;parentRoute:typeof rootRouteImport};
+    "/skipped-jobs":{id:"/skipped-jobs";path:"/skipped-jobs";fullPath:"/skipped-jobs";preLoaderRoute:typeof SkippedJobsRouteImport;parentRoute:typeof rootRouteImport};
     "/jobs":{id:"/jobs";path:"/jobs";fullPath:"/jobs";preLoaderRoute:typeof JobsRouteImport;parentRoute:typeof rootRouteImport};
     "/applications":{id:"/applications";path:"/applications";fullPath:"/applications";preLoaderRoute:typeof ApplicationsRouteImport;parentRoute:typeof rootRouteImport};
     "/applications_/$applicationId":{id:"/applications_/$applicationId";path:"/applications/$applicationId";fullPath:"/applications/$applicationId";preLoaderRoute:typeof ApplicationDetailRouteImport;parentRoute:typeof rootRouteImport};
@@ -94,5 +100,5 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootRouteChildren={IndexRoute,AuthRoute,ResetPasswordRoute,DashboardRoute,DiscoverRoute,JobsRoute,ApplicationsRoute,ApplicationDetailRoute,DocumentsRoute,ProfileRoute,SettingsRoute,PrepareRoute,AnswersRoute,PricingRoute,BillingRoute,EmployerRoute,InterestsRoute,ReviewRoute,AutomationSettingsRoute,AutomationCenterRoute,QuickApplyRoute,ApiStripeWebhookRoute,ApiApplicationMailWebhookRoute};
+const rootRouteChildren={IndexRoute,AuthRoute,ResetPasswordRoute,DashboardRoute,DiscoverRoute,JobFeedRoute,SkippedJobsRoute,JobsRoute,ApplicationsRoute,ApplicationDetailRoute,DocumentsRoute,ProfileRoute,SettingsRoute,PrepareRoute,AnswersRoute,PricingRoute,BillingRoute,EmployerRoute,InterestsRoute,ReviewRoute,AutomationSettingsRoute,AutomationCenterRoute,QuickApplyRoute,ApiStripeWebhookRoute,ApiApplicationMailWebhookRoute};
 export const routeTree=rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>();
