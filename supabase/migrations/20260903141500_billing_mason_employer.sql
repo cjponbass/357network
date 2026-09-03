@@ -38,9 +38,17 @@ create table if not exists public.employer_profiles (
 );
 alter table public.employer_profiles enable row level security;
 drop policy if exists "employer_profiles_own_select" on public.employer_profiles;
+drop policy if exists "employer_profiles_interest_candidate_select" on public.employer_profiles;
 drop policy if exists "employer_profiles_own_insert" on public.employer_profiles;
 drop policy if exists "employer_profiles_own_update" on public.employer_profiles;
 create policy "employer_profiles_own_select" on public.employer_profiles for select to authenticated using (auth.uid() = user_id);
+create policy "employer_profiles_interest_candidate_select" on public.employer_profiles for select to authenticated using (
+  exists (
+    select 1 from public.employer_interest_requests r
+    where r.employer_user_id = employer_profiles.user_id
+      and r.candidate_user_id = auth.uid()
+  )
+);
 create policy "employer_profiles_own_insert" on public.employer_profiles for insert to authenticated with check (auth.uid() = user_id);
 create policy "employer_profiles_own_update" on public.employer_profiles for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
