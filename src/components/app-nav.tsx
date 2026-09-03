@@ -5,8 +5,9 @@ import { BRAND } from "@/lib/brand";
 
 const links = [
   ["Dashboard", "/dashboard"],
-  ["Discover", "/discover"],
+  ["Job Feed", "/job-feed"],
   ["Apply with 357", "/quick-apply"],
+  ["Skipped Jobs", "/skipped-jobs"],
   ["Saved Jobs", "/jobs"],
   ["AI Preparation", "/prepare"],
   ["Saved Answers", "/answers"],
