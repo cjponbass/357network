@@ -8,19 +8,25 @@ export const Route = createFileRoute("/api/stripe/webhook")({
         try {
           const { verifyStripeWebhook, subscriptionSnapshot } = await import("@/lib/billing/stripe.server");
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const admin = supabaseAdmin as any;
           const event = await verifyStripeWebhook(rawBody, request.headers.get("stripe-signature"));
-          const eventId = typeof event.id === "string" ? event.id : null;
+          const eventIdValue = event["id"];
+          const eventId = typeof eventIdValue === "string" ? eventIdValue : null;
           if (!eventId) return Response.json({ error: "Invalid event." }, { status: 400 });
 
-          const { data: already } = await supabaseAdmin.from("stripe_webhook_events").select("event_id").eq("event_id", eventId).maybeSingle();
+          const { data: already } = await admin.from("stripe_webhook_events").select("event_id").eq("event_id", eventId).maybeSingle();
           if (already) return Response.json({ received: true, duplicate: true });
 
-          const type = typeof event.type === "string" ? event.type : "";
+          const typeValue = event["type"];
+          const type = typeof typeValue === "string" ? typeValue : "";
           if (type.startsWith("customer.subscription.")) {
-            const object = event?.data?.object as Record<string, any>;
+            const dataValue = event["data"];
+            const data = dataValue && typeof dataValue === "object" ? dataValue as Record<string, unknown> : {};
+            const objectValue = data["object"];
+            const object = objectValue && typeof objectValue === "object" ? objectValue as Record<string, unknown> : {};
             const snapshot = subscriptionSnapshot(object);
             if (snapshot) {
-              const { error } = await supabaseAdmin.from("subscriptions").upsert({
+              const { error } = await admin.from("subscriptions").upsert({
                 user_id: snapshot.userId,
                 stripe_customer_id: snapshot.customerId,
                 stripe_subscription_id: snapshot.subscriptionId,
@@ -35,7 +41,7 @@ export const Route = createFileRoute("/api/stripe/webhook")({
             }
           }
 
-          const { error: logError } = await supabaseAdmin.from("stripe_webhook_events").insert({ event_id: eventId, event_type: type });
+          const { error: logError } = await admin.from("stripe_webhook_events").insert({ event_id: eventId, event_type: type });
           if (logError && !String(logError.message).toLowerCase().includes("duplicate")) throw new Error(logError.message);
           return Response.json({ received: true });
         } catch (error) {
