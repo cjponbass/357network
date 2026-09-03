@@ -10,6 +10,8 @@ This is a **deployment-only handoff**. The application engineering is completed 
 - Approved artwork: `public/357-network-header.jpg`
 - Required tagline: `Where Opportunity Knocks for You. Automatically.`
 
+The approved header artwork has been replaced with a valid production image at the path above. Do not substitute, redraw, regenerate, recolor, or reinterpret it.
+
 Do **not** deploy the stale historical Lovable project snapshot or the previously published `network357.lovable.app` code as the production application.
 
 ## 2. Important Lovable/GitHub connection constraint
