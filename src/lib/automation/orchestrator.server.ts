@@ -39,6 +39,7 @@ export interface ExecutionResult {
 
 const DISCLAIMER =
   "Dry run only. Nothing was sent to the employer or ATS, no confirmation was captured and no receipt was created.";
+const MAX_FORM_STEPS = 12;
 
 async function loadContext(supabase: Client, userId: string, applicationId: string) {
   const { data: application, error: appError } = await supabase
@@ -157,7 +158,7 @@ export async function runReadinessCheck(
       );
     }
     notes.push(
-      "Static readiness only. A real run re-inspects the live form and stops only on actual unresolved required questions.",
+      "Static readiness only. A real run re-inspects every live form step and stops only on actual unresolved required questions.",
     );
   }
 
@@ -250,7 +251,6 @@ export async function runSubmission(
 
   const markVerifiedSubmissionInTracker = async () => {
     if (!shouldMarkApplicationSubmitted(application.status)) return;
-
     const submittedAt = new Date().toISOString();
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("applications")
@@ -260,9 +260,7 @@ export async function runSubmission(
       .eq("status", "draft")
       .select("id")
       .maybeSingle();
-
     if (updateError || !updated) return;
-
     await supabaseAdmin.from("application_status_events").insert({
       application_id: applicationId,
       from_status: "draft",
@@ -278,14 +276,7 @@ export async function runSubmission(
     .eq("application_id", applicationId)
     .maybeSingle();
   if (existingReceipt) {
-    return {
-      ...base,
-      attemptId: null,
-      state: "succeeded",
-      errorCategory: "already_submitted",
-      receiptId: existingReceipt.id,
-      message: "This application already has a verified receipt. Nothing was re-sent.",
-    };
+    return { ...base, attemptId: null, state: "succeeded", errorCategory: "already_submitted", receiptId: existingReceipt.id, message: "This application already has a verified receipt. Nothing was re-sent." };
   }
 
   const idempotencyKey = buildIdempotencyKey({ applicationId, targetUrl, requestKey });
@@ -296,13 +287,7 @@ export async function runSubmission(
     .eq("idempotency_key", idempotencyKey)
     .maybeSingle();
 
-  if (
-    priorAttempt &&
-    (priorAttempt.state === "queued" ||
-      priorAttempt.state === "running" ||
-      priorAttempt.state === "succeeded" ||
-      priorAttempt.error_category === "verification_failed")
-  ) {
+  if (priorAttempt && (priorAttempt.state === "queued" || priorAttempt.state === "running" || priorAttempt.state === "succeeded" || priorAttempt.error_category === "verification_failed")) {
     const verificationUncertain = priorAttempt.error_category === "verification_failed";
     return {
       ...base,
@@ -312,9 +297,7 @@ export async function runSubmission(
       receiptId: priorAttempt.receipt_id,
       message: verificationUncertain
         ? "A prior attempt may have reached the employer, but durable receipt verification is incomplete. Automatic retry is blocked to prevent a duplicate application."
-        : priorAttempt.state === "succeeded"
-          ? "This submission already completed."
-          : "A submission attempt for this application is already in progress.",
+        : priorAttempt.state === "succeeded" ? "This submission already completed." : "A submission attempt for this application is already in progress.",
     };
   }
 
@@ -340,46 +323,15 @@ export async function runSubmission(
       .eq("id", currentAttemptId)
       .select("id")
       .maybeSingle();
-    if (updateError || !updatedAttempt?.id) {
-      return {
-        ...base,
-        attemptId: currentAttemptId,
-        state: "failed",
-        errorCategory: "provider_error",
-        receiptId: null,
-        message: "The submission attempt could not be re-queued safely, so nothing was sent.",
-      };
-    }
+    if (updateError || !updatedAttempt?.id) return { ...base, attemptId: currentAttemptId, state: "failed", errorCategory: "provider_error", receiptId: null, message: "The submission attempt could not be re-queued safely, so nothing was sent." };
     currentAttemptId = updatedAttempt.id;
   } else {
-    const { data: created, error: insertError } = await supabaseAdmin
-      .from("submission_attempts")
-      .insert(insertPayload)
-      .select("id")
-      .maybeSingle();
+    const { data: created, error: insertError } = await supabaseAdmin.from("submission_attempts").insert(insertPayload).select("id").maybeSingle();
     if (insertError) {
       const duplicateAttempt = insertError.code === "23505";
-      return {
-        ...base,
-        attemptId: null,
-        state: "failed",
-        errorCategory: duplicateAttempt ? "already_submitted" : "provider_error",
-        receiptId: null,
-        message: duplicateAttempt
-          ? "Another submission attempt is already active."
-          : "The submission attempt could not be recorded safely, so nothing was sent.",
-      };
+      return { ...base, attemptId: null, state: "failed", errorCategory: duplicateAttempt ? "already_submitted" : "provider_error", receiptId: null, message: duplicateAttempt ? "Another submission attempt is already active." : "The submission attempt could not be recorded safely, so nothing was sent." };
     }
-    if (!created?.id) {
-      return {
-        ...base,
-        attemptId: null,
-        state: "failed",
-        errorCategory: "provider_error",
-        receiptId: null,
-        message: "The submission attempt could not be confirmed in storage, so nothing was sent.",
-      };
-    }
+    if (!created?.id) return { ...base, attemptId: null, state: "failed", errorCategory: "provider_error", receiptId: null, message: "The submission attempt could not be confirmed in storage, so nothing was sent." };
     currentAttemptId = created.id;
   }
 
@@ -390,31 +342,19 @@ export async function runSubmission(
     extra: { evidence?: Record<string, unknown>; receiptId?: string | null } = {},
   ): Promise<ExecutionResult> => {
     if (currentAttemptId) {
-      await supabaseAdmin
-        .from("submission_attempts")
-        .update({
-          state,
-          error_category: errorCategory,
-          error_message: state === "succeeded" ? null : message,
-          completed_at: new Date().toISOString(),
-          evidence: (extra.evidence ?? {}) as never,
-          receipt_id: extra.receiptId ?? null,
-        })
-        .eq("id", currentAttemptId);
+      await supabaseAdmin.from("submission_attempts").update({
+        state,
+        error_category: errorCategory,
+        error_message: state === "succeeded" ? null : message,
+        completed_at: new Date().toISOString(),
+        evidence: (extra.evidence ?? {}) as never,
+        receipt_id: extra.receiptId ?? null,
+      }).eq("id", currentAttemptId);
     }
-    return {
-      ...base,
-      attemptId: currentAttemptId,
-      state,
-      errorCategory,
-      receiptId: extra.receiptId ?? null,
-      message,
-    };
+    return { ...base, attemptId: currentAttemptId, state, errorCategory, receiptId: extra.receiptId ?? null, message };
   };
 
-  if (currentAttemptId) {
-    await supabaseAdmin.from("submission_attempts").update({ state: "running" }).eq("id", currentAttemptId);
-  }
+  if (currentAttemptId) await supabaseAdmin.from("submission_attempts").update({ state: "running" }).eq("id", currentAttemptId);
   if (!targetUrl) return finish("needs_user_input", "missing_url", "This job has no application URL.");
   if (!adapter) return finish("failed", "unsupported_ats", "No implemented adapter matches this URL.");
 
@@ -422,148 +362,87 @@ export async function runSubmission(
     const blocking = requiresUserInput(fields);
     if (blocking.length === 0) return null;
     if (currentAttemptId) {
-      await supabaseAdmin
-        .from("submission_attempts")
-        .update({
-          unresolved_questions: blocking.map((field) => ({
-            key: field.key,
-            label: field.label,
-            required: field.required,
-            sensitive: field.sensitive,
-          })) as never,
-        })
-        .eq("id", currentAttemptId);
+      await supabaseAdmin.from("submission_attempts").update({
+        unresolved_questions: blocking.map((field) => ({ key: field.key, label: field.label, required: field.required, sensitive: field.sensitive })) as never,
+      }).eq("id", currentAttemptId);
     }
-    return finish(
-      "needs_user_input",
-      "missing_facts",
-      `Waiting on your answers: ${blocking.map((field) => field.label).join(", ")}. Sensitive, legal, demographic, compensation and work-authorization questions are never guessed.`,
-    );
+    return finish("needs_user_input", "missing_facts", `Waiting on your answers: ${blocking.map((field) => field.label).join(", ")}. Sensitive, legal, demographic, compensation and work-authorization questions are never guessed.`);
   };
 
-  // Static adapter templates are useful for readiness guidance, but they are not the
-  // employer's actual form. A real submission must inspect the live ATS first and
-  // block only on required questions that actually exist there.
   const provider = await resolveBrowserProvider({ userId });
   if (!provider) {
-    return finish(
-      "failed",
-      config.configured ? "provider_unavailable" : "no_automation_provider",
-      config.configured
-        ? "The browser provider could not be started; nothing was submitted."
-        : "Automation is not configured; nothing was submitted.",
-    );
+    return finish("failed", config.configured ? "provider_unavailable" : "no_automation_provider", config.configured ? "The browser provider could not be started; nothing was submitted." : "Automation is not configured; nothing was submitted.");
   }
 
   let session: ProviderSession | null = null;
   try {
     session = await provider.openSession(targetUrl);
-    const inspection = await provider.inspect(session);
-    const inspectOutcome = outcomeForBlockers(inspection.blockers);
-    if (inspectOutcome) {
-      return finish(
-        inspectOutcome.state,
-        inspectOutcome.errorCategory,
-        inspectOutcome.message ?? "The live form could not be inspected.",
-      );
+    const allMapped: ResolvedField[] = [];
+    let submitResult: Awaited<ReturnType<typeof provider.submit>> | null = null;
+
+    for (let step = 1; step <= MAX_FORM_STEPS; step += 1) {
+      const inspection = await provider.inspect(session);
+      const inspectOutcome = outcomeForBlockers(inspection.blockers);
+      if (inspectOutcome) return finish(inspectOutcome.state, inspectOutcome.errorCategory, inspectOutcome.message ?? "The live form could not be inspected.");
+
+      const liveMapped = adapter.mapFacts(normalizeLiveFields(inspection.fields), candidate);
+      allMapped.push(...liveMapped);
+      const liveStop = await stopOnUnresolved(liveMapped);
+      if (liveStop) return liveStop;
+
+      const fillResult = await provider.fill(session, buildFillInputs(liveMapped));
+      const fillOutcome = outcomeForBlockers(fillResult.blockers);
+      if (fillOutcome) return finish(fillOutcome.state, fillOutcome.errorCategory, fillOutcome.message ?? "The form could not be completed.");
+      if (fillResult.failed.length > 0) return finish("needs_user_input", "missing_facts", `Could not complete: ${fillResult.failed.map((field) => field.key).join(", ")}.`);
+
+      submitResult = await provider.submit(session);
+      if (submitResult.submitted) break;
+
+      const onlyNoFinalSubmit = submitResult.blockers.length === 1 && submitResult.blockers[0]?.kind === "unsupported_widget";
+      if (onlyNoFinalSubmit && provider.advance && step < MAX_FORM_STEPS) {
+        const advanceResult = await provider.advance(session);
+        const advanceOutcome = outcomeForBlockers(advanceResult.blockers);
+        if (!advanceOutcome && advanceResult.advanced) continue;
+        if (advanceOutcome) return finish(advanceOutcome.state, advanceOutcome.errorCategory, advanceOutcome.message ?? "The next application step could not be opened.");
+      }
+
+      const submitOutcome = outcomeForBlockers(submitResult.blockers);
+      if (submitOutcome) return finish(submitOutcome.state, submitOutcome.errorCategory, submitOutcome.message ?? "Submission stopped before completion.");
+      return finish("failed", "provider_error", "The employer form did not submit and could not advance safely.");
     }
 
-    const liveMapped = adapter.mapFacts(normalizeLiveFields(inspection.fields), candidate);
-    const liveStop = await stopOnUnresolved(liveMapped);
-    if (liveStop) return liveStop;
-
-    const fillResult = await provider.fill(session, buildFillInputs(liveMapped));
-    const fillOutcome = outcomeForBlockers(fillResult.blockers);
-    if (fillOutcome) {
-      return finish(
-        fillOutcome.state,
-        fillOutcome.errorCategory,
-        fillOutcome.message ?? "The form could not be completed.",
-      );
-    }
-    if (fillResult.failed.length > 0) {
-      return finish(
-        "needs_user_input",
-        "missing_facts",
-        `Could not complete: ${fillResult.failed.map((field) => field.key).join(", ")}.`,
-      );
-    }
-
-    const submitResult = await provider.submit(session);
-    const submitOutcome = outcomeForBlockers(submitResult.blockers);
-    if (submitOutcome) {
-      return finish(
-        submitOutcome.state,
-        submitOutcome.errorCategory,
-        submitOutcome.message ?? "Submission stopped before completion.",
-      );
-    }
+    if (!submitResult?.submitted) return finish("failed", "unsupported_ats", `The application exceeded the ${MAX_FORM_STEPS}-step safety limit without reaching an unambiguous final submit control.`);
 
     const verifyResult = await provider.verify(session);
     const evidence = await provider.captureEvidence(session);
-    if (
-      !canCreateReceipt({
-        verified: verifyResult.verified,
-        confirmationText: verifyResult.confirmationText,
-        confirmationUrl: verifyResult.confirmationUrl,
-        submitted: submitResult.submitted,
-      })
-    ) {
-      return finish(
-        "failed",
-        "verification_failed",
-        "No concrete confirmation evidence was returned, so no verified receipt was created.",
-        { evidence: { ...evidence, verify: verifyResult } },
-      );
+    if (!canCreateReceipt({ verified: verifyResult.verified, confirmationText: verifyResult.confirmationText, confirmationUrl: verifyResult.confirmationUrl, submitted: submitResult.submitted })) {
+      return finish("failed", "verification_failed", "No concrete confirmation evidence was returned, so no verified receipt was created.", { evidence: { ...evidence, verify: verifyResult } });
     }
 
-    const { data: receipt, error: receiptError } = await supabaseAdmin
-      .from("submission_receipts")
-      .insert({
-        application_id: applicationId,
-        ats_name: adapter.displayName,
-        application_url: verifyResult.confirmationUrl ?? targetUrl,
-        confirmation_text: verifyResult.confirmationText,
-        screenshot_path: evidence.screenshotPath,
-        submitted_at: new Date().toISOString(),
-        verified: true,
-        answers: buildSubmittedAnswers(liveMapped) as never,
-      })
-      .select("id")
-      .maybeSingle();
+    const { data: receipt, error: receiptError } = await supabaseAdmin.from("submission_receipts").insert({
+      application_id: applicationId,
+      ats_name: adapter.displayName,
+      application_url: verifyResult.confirmationUrl ?? targetUrl,
+      confirmation_text: verifyResult.confirmationText,
+      screenshot_path: evidence.screenshotPath,
+      submitted_at: new Date().toISOString(),
+      verified: true,
+      answers: buildSubmittedAnswers(allMapped) as never,
+    }).select("id").maybeSingle();
 
     if (receiptError || !receipt) {
-      const { data: existing } = await supabaseAdmin
-        .from("submission_receipts")
-        .select("id")
-        .eq("application_id", applicationId)
-        .maybeSingle();
+      const { data: existing } = await supabaseAdmin.from("submission_receipts").select("id").eq("application_id", applicationId).maybeSingle();
       if (existing) {
         await markVerifiedSubmissionInTracker();
-        return finish("succeeded", null, "Submission verified; receipt already recorded.", {
-          evidence,
-          receiptId: existing.id,
-        });
+        return finish("succeeded", null, "Submission verified; receipt already recorded.", { evidence, receiptId: existing.id });
       }
-      return finish(
-        "failed",
-        "verification_failed",
-        "Submission was verified at the employer, but receipt storage failed. Automatic retry is blocked to prevent a duplicate application.",
-        { evidence: { ...evidence, verify: verifyResult } },
-      );
+      return finish("failed", "verification_failed", "Submission was verified at the employer, but receipt storage failed. Automatic retry is blocked to prevent a duplicate application.", { evidence: { ...evidence, verify: verifyResult } });
     }
 
     await markVerifiedSubmissionInTracker();
-    return finish("succeeded", null, "Submission verified and receipt recorded.", {
-      evidence: { ...evidence, verify: verifyResult },
-      receiptId: receipt.id,
-    });
+    return finish("succeeded", null, "Submission verified and receipt recorded.", { evidence: { ...evidence, verify: verifyResult }, receiptId: receipt.id });
   } catch (error) {
-    return finish(
-      "failed",
-      "provider_error",
-      error instanceof Error ? error.message : "The automation provider failed unexpectedly.",
-    );
+    return finish("failed", "provider_error", error instanceof Error ? error.message : "The automation provider failed unexpectedly.");
   } finally {
     if (session) await provider.closeSession(session);
   }
