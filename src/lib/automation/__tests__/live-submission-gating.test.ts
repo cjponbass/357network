@@ -25,6 +25,12 @@ describe("live submission gating", () => {
 
   it("keeps static templates limited to readiness guidance", () => {
     expect(orchestrator).toContain("const inspection = adapter.inspectForm(targetUrl ?? \"\")");
-    expect(orchestrator).toContain("Static readiness only. A real run re-inspects the live form");
+    expect(orchestrator).toContain("Static readiness only. A real run re-inspects every live form step");
+  });
+
+  it("bounds and advances multi-step application forms", () => {
+    expect(orchestrator).toContain("const MAX_FORM_STEPS = 12");
+    expect(orchestrator).toContain("for (let step = 1; step <= MAX_FORM_STEPS; step += 1)");
+    expect(orchestrator).toContain("await provider.advance(session)");
   });
 });
