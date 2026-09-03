@@ -3,8 +3,7 @@ export type CandidatePlan = "basic" | "pro" | "auto";
 export type PlanEntitlements = {
   monthlyPriceUsd: number;
   trialDays: number;
-  aiPreparationsPerMonth: number;
-  savedJobsLimit: number | null;
+  aiFitAndAnswers: boolean;
   tailoredDocuments: boolean;
   atsAutomation: boolean;
 };
@@ -13,24 +12,21 @@ export const PLAN_ENTITLEMENTS: Record<CandidatePlan, PlanEntitlements> = {
   basic: {
     monthlyPriceUsd: 14.99,
     trialDays: 5,
-    aiPreparationsPerMonth: 10,
-    savedJobsLimit: 50,
+    aiFitAndAnswers: true,
     tailoredDocuments: false,
     atsAutomation: false,
   },
   pro: {
     monthlyPriceUsd: 29.99,
     trialDays: 5,
-    aiPreparationsPerMonth: 100,
-    savedJobsLimit: null,
+    aiFitAndAnswers: true,
     tailoredDocuments: true,
     atsAutomation: false,
   },
   auto: {
     monthlyPriceUsd: 39.99,
     trialDays: 5,
-    aiPreparationsPerMonth: 250,
-    savedJobsLimit: null,
+    aiFitAndAnswers: true,
     tailoredDocuments: true,
     atsAutomation: true,
   },
