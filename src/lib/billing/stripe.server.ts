@@ -1,6 +1,7 @@
 import { isCandidatePlan, type CandidatePlan } from "./plans";
 
 const STRIPE_API = "https://api.stripe.com/v1";
+type StripeObject = Record<string, unknown>;
 
 function requireStripeSecret(): string {
   const value = process.env["STRIPE_SECRET_KEY"];
@@ -19,7 +20,14 @@ function priceIdFor(plan: CandidatePlan): string {
   return value;
 }
 
-async function stripePost(path: string, body: URLSearchParams): Promise<Record<string, any>> {
+function getErrorMessage(json: StripeObject): string | null {
+  const error = json["error"];
+  if (!error || typeof error !== "object") return null;
+  const message = (error as Record<string, unknown>)["message"];
+  return typeof message === "string" ? message : null;
+}
+
+async function stripePost(path: string, body: URLSearchParams): Promise<StripeObject> {
   const response = await fetch(`${STRIPE_API}${path}`, {
     method: "POST",
     headers: {
@@ -28,8 +36,8 @@ async function stripePost(path: string, body: URLSearchParams): Promise<Record<s
     },
     body,
   });
-  const json = (await response.json()) as Record<string, any>;
-  if (!response.ok) throw new Error(json?.error?.message ?? `Stripe request failed (${response.status}).`);
+  const json = (await response.json()) as StripeObject;
+  if (!response.ok) throw new Error(getErrorMessage(json) ?? `Stripe request failed (${response.status}).`);
   return json;
 }
 
@@ -56,8 +64,9 @@ export async function createSubscriptionCheckout(args: {
   body.set("allow_promotion_codes", "true");
 
   const session = await stripePost("/checkout/sessions", body);
-  if (typeof session.url !== "string") throw new Error("Stripe did not return a checkout URL.");
-  return session.url;
+  const url = session["url"];
+  if (typeof url !== "string") throw new Error("Stripe did not return a checkout URL.");
+  return url;
 }
 
 export async function createCustomerPortal(args: { customerId: string; returnUrl: string }): Promise<string> {
@@ -65,8 +74,9 @@ export async function createCustomerPortal(args: { customerId: string; returnUrl
   body.set("customer", args.customerId);
   body.set("return_url", args.returnUrl);
   const session = await stripePost("/billing_portal/sessions", body);
-  if (typeof session.url !== "string") throw new Error("Stripe did not return a billing portal URL.");
-  return session.url;
+  const url = session["url"];
+  if (typeof url !== "string") throw new Error("Stripe did not return a billing portal URL.");
+  return url;
 }
 
 function hex(bytes: ArrayBuffer): string {
@@ -80,7 +90,7 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-export async function verifyStripeWebhook(rawBody: string, signatureHeader: string | null): Promise<Record<string, any>> {
+export async function verifyStripeWebhook(rawBody: string, signatureHeader: string | null): Promise<StripeObject> {
   const secret = process.env["STRIPE_WEBHOOK_SECRET"];
   if (!secret) throw new Error("Stripe webhook secret is not configured.");
   if (!signatureHeader) throw new Error("Missing Stripe-Signature header.");
@@ -98,10 +108,10 @@ export async function verifyStripeWebhook(rawBody: string, signatureHeader: stri
   const expected = hex(digest);
   if (!signatures.some((candidate) => constantTimeEqual(candidate, expected))) throw new Error("Invalid Stripe webhook signature.");
 
-  return JSON.parse(rawBody) as Record<string, any>;
+  return JSON.parse(rawBody) as StripeObject;
 }
 
-export function subscriptionSnapshot(object: Record<string, any>): {
+export function subscriptionSnapshot(object: StripeObject): {
   userId: string;
   plan: CandidatePlan;
   customerId: string | null;
@@ -111,19 +121,23 @@ export function subscriptionSnapshot(object: Record<string, any>): {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 } | null {
-  const userId = object?.metadata?.user_id;
-  const plan = object?.metadata?.plan;
-  const subscriptionId = object?.id;
+  const metadataValue = object["metadata"];
+  const metadata = metadataValue && typeof metadataValue === "object" ? metadataValue as Record<string, unknown> : {};
+  const userId = metadata["user_id"];
+  const plan = metadata["plan"];
+  const subscriptionId = object["id"];
   if (typeof userId !== "string" || !isCandidatePlan(plan) || typeof subscriptionId !== "string") return null;
   const unixToIso = (value: unknown) => typeof value === "number" ? new Date(value * 1000).toISOString() : null;
+  const customer = object["customer"];
+  const status = object["status"];
   return {
     userId,
     plan,
-    customerId: typeof object.customer === "string" ? object.customer : null,
+    customerId: typeof customer === "string" ? customer : null,
     subscriptionId,
-    status: typeof object.status === "string" ? object.status : "incomplete",
-    trialEndsAt: unixToIso(object.trial_end),
-    currentPeriodEnd: unixToIso(object.current_period_end),
-    cancelAtPeriodEnd: object.cancel_at_period_end === true,
+    status: typeof status === "string" ? status : "incomplete",
+    trialEndsAt: unixToIso(object["trial_end"]),
+    currentPeriodEnd: unixToIso(object["current_period_end"]),
+    cancelAtPeriodEnd: object["cancel_at_period_end"] === true,
   };
 }
