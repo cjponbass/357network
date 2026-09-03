@@ -15,16 +15,20 @@ create table if not exists public.subscriptions (
   cancel_at_period_end boolean not null default false,
   updated_at timestamptz not null default now()
 );
-
 alter table public.subscriptions enable row level security;
 drop policy if exists "subscriptions_select_own" on public.subscriptions;
 create policy "subscriptions_select_own" on public.subscriptions for select to authenticated using (auth.uid() = user_id);
 revoke insert, update, delete on public.subscriptions from authenticated, anon;
 
-drop table if exists public.employer_interest_requests cascade;
-drop table if exists public.employer_profiles cascade;
+create table if not exists public.stripe_webhook_events (
+  event_id text primary key,
+  event_type text not null,
+  processed_at timestamptz not null default now()
+);
+alter table public.stripe_webhook_events enable row level security;
+revoke all on public.stripe_webhook_events from authenticated, anon;
 
-create table public.employer_profiles (
+create table if not exists public.employer_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   company_name text not null check (length(trim(company_name)) > 0),
   recruiter_name text,
@@ -33,11 +37,14 @@ create table public.employer_profiles (
   updated_at timestamptz not null default now()
 );
 alter table public.employer_profiles enable row level security;
+drop policy if exists "employer_profiles_own_select" on public.employer_profiles;
+drop policy if exists "employer_profiles_own_insert" on public.employer_profiles;
+drop policy if exists "employer_profiles_own_update" on public.employer_profiles;
 create policy "employer_profiles_own_select" on public.employer_profiles for select to authenticated using (auth.uid() = user_id);
 create policy "employer_profiles_own_insert" on public.employer_profiles for insert to authenticated with check (auth.uid() = user_id);
 create policy "employer_profiles_own_update" on public.employer_profiles for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create table public.employer_interest_requests (
+create table if not exists public.employer_interest_requests (
   id uuid primary key default gen_random_uuid(),
   employer_user_id uuid not null references auth.users(id) on delete cascade,
   candidate_user_id uuid not null references auth.users(id) on delete cascade,
@@ -48,6 +55,10 @@ create table public.employer_interest_requests (
   unique (employer_user_id, candidate_user_id, status)
 );
 alter table public.employer_interest_requests enable row level security;
+drop policy if exists "interest_employer_select" on public.employer_interest_requests;
+drop policy if exists "interest_candidate_select" on public.employer_interest_requests;
+drop policy if exists "interest_employer_insert" on public.employer_interest_requests;
+drop policy if exists "interest_candidate_update" on public.employer_interest_requests;
 create policy "interest_employer_select" on public.employer_interest_requests for select to authenticated using (auth.uid() = employer_user_id);
 create policy "interest_candidate_select" on public.employer_interest_requests for select to authenticated using (auth.uid() = candidate_user_id);
 create policy "interest_employer_insert" on public.employer_interest_requests for insert to authenticated with check (
