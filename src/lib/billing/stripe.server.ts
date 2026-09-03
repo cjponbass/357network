@@ -10,11 +10,7 @@ function requireStripeSecret(): string {
 }
 
 function priceIdFor(plan: CandidatePlan): string {
-  const names: Record<CandidatePlan, string> = {
-    basic: "STRIPE_PRICE_BASIC",
-    pro: "STRIPE_PRICE_PRO",
-    auto: "STRIPE_PRICE_AUTO",
-  };
+  const names: Record<CandidatePlan, string> = { basic: "STRIPE_PRICE_BASIC", pro: "STRIPE_PRICE_PRO", auto: "STRIPE_PRICE_AUTO" };
   const value = process.env[names[plan]];
   if (!value) throw new Error(`Stripe price is not configured for ${plan}.`);
   return value;
@@ -30,10 +26,7 @@ function getErrorMessage(json: StripeObject): string | null {
 async function stripePost(path: string, body: URLSearchParams): Promise<StripeObject> {
   const response = await fetch(`${STRIPE_API}${path}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${requireStripeSecret()}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers: { Authorization: `Bearer ${requireStripeSecret()}`, "Content-Type": "application/x-www-form-urlencoded" },
     body,
   });
   const json = (await response.json()) as StripeObject;
@@ -45,6 +38,8 @@ export async function createSubscriptionCheckout(args: {
   plan: CandidatePlan;
   userId: string;
   email?: string | null;
+  customerId?: string | null;
+  trialDays: number;
   successUrl: string;
   cancelUrl: string;
 }): Promise<string> {
@@ -53,10 +48,11 @@ export async function createSubscriptionCheckout(args: {
   body.set("success_url", args.successUrl);
   body.set("cancel_url", args.cancelUrl);
   body.set("client_reference_id", args.userId);
-  if (args.email) body.set("customer_email", args.email);
+  if (args.customerId) body.set("customer", args.customerId);
+  else if (args.email) body.set("customer_email", args.email);
   body.set("line_items[0][price]", priceIdFor(args.plan));
   body.set("line_items[0][quantity]", "1");
-  body.set("subscription_data[trial_period_days]", "5");
+  if (args.trialDays > 0) body.set("subscription_data[trial_period_days]", String(args.trialDays));
   body.set("subscription_data[metadata][user_id]", args.userId);
   body.set("subscription_data[metadata][plan]", args.plan);
   body.set("metadata[user_id]", args.userId);
@@ -94,20 +90,16 @@ export async function verifyStripeWebhook(rawBody: string, signatureHeader: stri
   const secret = process.env["STRIPE_WEBHOOK_SECRET"];
   if (!secret) throw new Error("Stripe webhook secret is not configured.");
   if (!signatureHeader) throw new Error("Missing Stripe-Signature header.");
-
   const parts = signatureHeader.split(",").map((part) => part.trim());
   const timestamp = parts.find((part) => part.startsWith("t="))?.slice(2);
   const signatures = parts.filter((part) => part.startsWith("v1=")).map((part) => part.slice(3));
   if (!timestamp || !signatures.length) throw new Error("Invalid Stripe signature header.");
-
   const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
   if (!Number.isFinite(ageSeconds) || ageSeconds > 300) throw new Error("Stripe webhook timestamp outside tolerance.");
-
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${timestamp}.${rawBody}`));
   const expected = hex(digest);
   if (!signatures.some((candidate) => constantTimeEqual(candidate, expected))) throw new Error("Invalid Stripe webhook signature.");
-
   return JSON.parse(rawBody) as StripeObject;
 }
 
