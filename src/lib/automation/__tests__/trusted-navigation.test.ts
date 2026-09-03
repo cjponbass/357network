@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { isTrustedAtsNavigation } from "../provider/browserbase.server";
+import {
+  createBrowserbaseProvider,
+  isTrustedAtsNavigation,
+  type BrowserbaseDeps,
+  type PageLike,
+} from "../provider/browserbase.server";
 
 describe("trusted ATS navigation boundary", () => {
   it("allows redirects that stay within the same supported ATS provider", () => {
@@ -49,5 +54,57 @@ describe("trusted ATS navigation boundary", () => {
         "https://jobs.lever.co/example/123",
       ),
     ).toBe(false);
+  });
+
+  it("revalidates the ATS boundary before inspection and submission after a mid-session redirect", async () => {
+    let currentUrl = "https://jobs.lever.co/example/123";
+    const evaluate = vi.fn();
+    const click = vi.fn();
+    const page: PageLike = {
+      async goto(url) {
+        currentUrl = url;
+      },
+      evaluate,
+      async fill() {},
+      async setInputFiles() {},
+      click,
+      async screenshot() {
+        return new Uint8Array();
+      },
+      url() {
+        return currentUrl;
+      },
+    };
+    const deps: BrowserbaseDeps = {
+      async createSession() {
+        return { id: "session-1", connectUrl: "wss://browser.example/session-1" };
+      },
+      async connect() {
+        return { browser: { async close() {} }, page };
+      },
+      async releaseSession() {},
+      async downloadDocument() {
+        throw new Error("not used");
+      },
+      async storeScreenshot() {
+        return null;
+      },
+      submitEnabled: true,
+    };
+    const provider = createBrowserbaseProvider(deps);
+    const session = await provider.openSession(currentUrl);
+
+    currentUrl = "https://evil.example/collect";
+
+    const inspected = await provider.inspect(session);
+    expect(inspected.fields).toEqual([]);
+    expect(inspected.blockers[0]?.kind).toBe("provider_error");
+    expect(inspected.blockers[0]?.message).toContain("trusted ATS provider");
+    expect(evaluate).not.toHaveBeenCalled();
+
+    const submitted = await provider.submit(session);
+    expect(submitted.submitted).toBe(false);
+    expect(submitted.blockers[0]?.kind).toBe("provider_error");
+    expect(click).not.toHaveBeenCalled();
   });
 });
