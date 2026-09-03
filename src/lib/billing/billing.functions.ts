@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { BILLABLE_STATUSES, PLAN_ENTITLEMENTS, isCandidatePlan, planAllows, type CandidatePlan } from "./plans";
 
 export type BillingStatus = {
@@ -19,6 +21,12 @@ function validatePlan(input: { plan: CandidatePlan }) {
   return input;
 }
 
+function appBaseUrl(): string {
+  const request = getRequest();
+  const requestOrigin = request ? new URL(request.url).origin : null;
+  return process.env["PUBLIC_APP_URL"] || requestOrigin || "http://localhost:3000";
+}
+
 export const getBillingStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BillingStatus> => {
@@ -28,7 +36,7 @@ export const getBillingStatus = createServerFn({ method: "GET" })
     const status = typeof data?.status === "string" ? data.status : null;
     const active = Boolean(plan && status && BILLABLE_STATUSES.has(status));
     return {
-      configured: Boolean(process.env["STRIPE_SECRET_KEY"] && process.env["STRIPE_PRICE_BASIC"] && process.env["STRIPE_PRICE_PRO"] && process.env["STRIPE_PRICE_AUTO"]),
+      configured: Boolean(process.env["STRIPE_SECRET_KEY"] && process.env["STRIPE_PRICE_BASIC"] && process.env["STRIPE_PRICE_PRO"] && process.env["STRIPE_PRICE_AUTO"] && process.env["STRIPE_WEBHOOK_SECRET"]),
       plan,
       status,
       trialEndsAt: data?.trial_ends_at ?? null,
@@ -43,15 +51,30 @@ export const createCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validatePlan)
   .handler(async ({ data, context }) => {
-    const request = getRequest();
-    const requestOrigin = request ? new URL(request.url).origin : null;
-    const baseUrl = process.env["PUBLIC_APP_URL"] || requestOrigin || "http://localhost:3000";
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from("subscriptions")
+      .select("stripe_customer_id,status")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+
+    const baseUrl = appBaseUrl();
+    const customerId = existing?.stripe_customer_id ?? null;
+    const currentStatus = existing?.status ?? null;
+    if (customerId && currentStatus && currentStatus !== "canceled" && currentStatus !== "unpaid" && currentStatus !== "incomplete") {
+      const { createCustomerPortal } = await import("./stripe.server");
+      return { url: await createCustomerPortal({ customerId, returnUrl: `${baseUrl}/billing` }) };
+    }
+
     const { createSubscriptionCheckout } = await import("./stripe.server");
     const email = typeof context.claims?.email === "string" ? context.claims.email : null;
     const url = await createSubscriptionCheckout({
       plan: data.plan,
       userId: context.userId,
       email,
+      customerId,
+      trialDays: customerId ? 0 : 5,
       successUrl: `${baseUrl}/billing?checkout=success`,
       cancelUrl: `${baseUrl}/pricing?checkout=cancelled`,
     });
@@ -65,15 +88,12 @@ export const createBillingPortal = createServerFn({ method: "POST" })
     const { data, error } = await supabaseAdmin.from("subscriptions").select("stripe_customer_id").eq("user_id", context.userId).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data?.stripe_customer_id) throw new Error("No Stripe customer is linked to this account yet.");
-    const request = getRequest();
-    const requestOrigin = request ? new URL(request.url).origin : null;
-    const baseUrl = process.env["PUBLIC_APP_URL"] || requestOrigin || "http://localhost:3000";
     const { createCustomerPortal } = await import("./stripe.server");
-    return { url: await createCustomerPortal({ customerId: data.stripe_customer_id, returnUrl: `${baseUrl}/billing` }) };
+    return { url: await createCustomerPortal({ customerId: data.stripe_customer_id, returnUrl: `${appBaseUrl()}/billing` }) };
   });
 
 export async function requirePaidPlan(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   required: CandidatePlan,
 ): Promise<CandidatePlan> {
