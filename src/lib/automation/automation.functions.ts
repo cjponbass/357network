@@ -47,6 +47,8 @@ export const checkSubmissionReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateApplicationId)
   .handler(async ({ data, context }): Promise<ReadinessReport> => {
+    const { requirePaidPlan } = await import("@/lib/billing/billing.functions");
+    await requirePaidPlan(context.supabase, context.userId, "auto");
     const { runReadinessCheck } = await import("./orchestrator.server");
     return runReadinessCheck(context.supabase, context.userId, data.applicationId);
   });
@@ -55,6 +57,8 @@ export const listSubmissionAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateApplicationId)
   .handler(async ({ data, context }): Promise<SubmissionAttempt[]> => {
+    const { requirePaidPlan } = await import("@/lib/billing/billing.functions");
+    await requirePaidPlan(context.supabase, context.userId, "auto");
     const { data: rows, error } = await context.supabase
       .from("submission_attempts")
       .select("*")
@@ -73,10 +77,12 @@ export const startSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateSubmissionInput)
   .handler(async ({ data, context }) => {
+    const { requirePaidPlan } = await import("@/lib/billing/billing.functions");
+    await requirePaidPlan(context.supabase, context.userId, "auto");
+
     const { detectProviderConfig } = await import("./provider/resolve.server");
     const config = detectProviderConfig();
     const disabledResult = getSubmissionDisabledResult(config);
-
     if (disabledResult) return disabledResult;
 
     const { data: application, error: applicationError } = await context.supabase
@@ -93,10 +99,5 @@ export const startSubmission = createServerFn({ method: "POST" })
     if (stateBlockedResult) return stateBlockedResult;
 
     const { runSubmission } = await import("./orchestrator.server");
-    return runSubmission(
-      context.supabase,
-      context.userId,
-      data.applicationId,
-      data.requestKey,
-    );
+    return runSubmission(context.supabase, context.userId, data.applicationId, data.requestKey);
   });
